@@ -45,7 +45,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
   const currency = state.settings.currency || '$';
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'BET' | 'EPL_MATCH'>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'RECORD' | 'EPL_MATCH'>('ALL');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedMatchForSlip, setSelectedMatchForSlip] = useState<MatchRecord | null>(null);
   const [isPdfDropdownOpen, setIsPdfDropdownOpen] = useState(false);
@@ -82,7 +82,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
   const counts = useMemo(() => {
     return {
       all: allLedgerItems.length,
-      bets: (state.matchHistory || []).length,
+      matches: (state.matchHistory || []).length,
       epl: (state.eplMatches || []).length,
       notes: Object.keys(state.preMatchNotes || {}).length,
     };
@@ -94,7 +94,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
     const html = buildPrintHtml(state, reportType);
     const titleMap: Record<PdfReportType, string> = {
       all: 'EPL Master Dossier (All Records)',
-      bets: 'EPL Match History Journal',
+      matches: 'EPL Match History Journal',
       epl: 'EPL Match Results & Standings Sheet',
       notes: 'EPL Pre-Match Tactical Dossiers',
       market_pnl: 'EPL Market Win & Loss Analysis',
@@ -164,11 +164,11 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
                     <span className="text-[10px] text-red-600 font-mono font-bold">({counts.all})</span>
                   </button>
                   <button
-                    onClick={() => handleExportPdf('bets')}
+                    onClick={() => handleExportPdf('matches')}
                     className="w-full text-left px-3 py-2 rounded-lg text-xs font-bold text-slate-800 hover:bg-red-50 hover:text-red-700 transition-colors flex items-center justify-between cursor-pointer"
                   >
                     <span>2. Daily Match History PDF</span>
-                    <span className="text-[10px] text-red-600 font-mono font-bold">({counts.bets})</span>
+                    <span className="text-[10px] text-red-600 font-mono font-bold">({counts.matches})</span>
                   </button>
                   <button
                     onClick={() => handleExportPdf('epl')}
@@ -208,7 +208,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
           </div>
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
             <span className="text-[11px] text-slate-500 font-semibold block">Recorded Matches</span>
-            <div className="text-xl font-black font-mono text-slate-900">{counts.bets} Matches</div>
+            <div className="text-xl font-black font-mono text-slate-900">{counts.matches} Matches</div>
           </div>
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
             <span className="text-[11px] text-slate-500 font-semibold block">EPL 20 Teams Matches</span>
@@ -244,14 +244,14 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
             All Records ({counts.all})
           </button>
           <button
-            onClick={() => setCategoryFilter('BET')}
+            onClick={() => setCategoryFilter('RECORD')}
             className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer ${
-              categoryFilter === 'BET'
+              categoryFilter === 'RECORD'
                 ? 'bg-red-600 text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900 bg-slate-100 border border-slate-200'
             }`}
           >
-            Match Entries ({counts.bets})
+            Match Entries ({counts.matches})
           </button>
           <button
             onClick={() => setCategoryFilter('EPL_MATCH')}
@@ -322,7 +322,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-bold border ${
-                          item.category === 'BET'
+                          item.category === 'RECORD'
                             ? 'bg-red-50 text-red-700 border-red-200'
                             : item.category === 'EPL_MATCH'
                             ? 'bg-blue-50 text-blue-700 border-blue-200'
@@ -376,7 +376,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
 
                     {/* Action (e.g. View Slip) */}
                     <td className="py-3.5 px-4 text-right">
-                      {item.category === 'BET' ? (
+                      {item.category === 'RECORD' ? (
                         <button
                           onClick={() => handleOpenSlip(item.id)}
                           className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold inline-flex items-center space-x-1 cursor-pointer"
@@ -406,7 +406,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                        item.category === 'BET'
+                        item.category === 'RECORD'
                           ? 'bg-red-50 text-red-700 border-red-200'
                           : item.category === 'EPL_MATCH'
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
@@ -458,7 +458,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
                       {item.amount || ''}
                     </span>
 
-                    {item.category === 'BET' && (
+                    {item.category === 'RECORD' && (
                       <button
                         onClick={() => handleOpenSlip(item.id)}
                         className="px-2 py-1 bg-red-50 text-red-700 border border-red-200 rounded text-xs font-bold flex items-center space-x-1 cursor-pointer"
