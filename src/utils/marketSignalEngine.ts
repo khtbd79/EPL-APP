@@ -298,7 +298,7 @@ function analyzeH2H(homeTeam: string, awayTeam: string, matches: EPLMatchEvent[]
 }
 
 /**
- * Main Signal Engine: evaluates all primary football betting markets
+ * Main Signal Engine: evaluates all primary football match markets
  */
 export function generateMatchSignals(
   homeTeam: string,

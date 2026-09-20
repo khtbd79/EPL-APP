@@ -353,7 +353,7 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Export Data Backup (JSON)</h2>
-              <p className="text-xs text-slate-500">Save, download, or copy all match data, bets, and settings</p>
+              <p className="text-xs text-slate-500">Save, download, or copy all match data, records, and settings</p>
             </div>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 hidden sm:inline-block">

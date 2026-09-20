@@ -6,12 +6,12 @@ import { ALL_EPL_20_TEAMS } from './teamData';
 const sTag = (tag: string): string => String.fromCharCode(60) + tag + String.fromCharCode(62);
 const sClose = (tag: string): string => String.fromCharCode(60, 47) + tag + String.fromCharCode(62);
 
-export type PdfReportType = 'all' | 'bets' | 'epl' | 'notes' | 'market_pnl';
+export type PdfReportType = 'all' | 'matches' | 'epl' | 'notes' | 'market_pnl';
 
 export interface SerialLedgerItem {
   serial: number;
   id: string;
-  category: 'BET' | 'EPL_MATCH' | 'PRE_MATCH_NOTE' | 'CATEGORY_RANKING';
+  category: 'RECORD' | 'EPL_MATCH' | 'PRE_MATCH_NOTE' | 'CATEGORY_RANKING';
   categoryLabel: string;
   date: string;
   time?: string;
@@ -35,7 +35,7 @@ export function buildUnifiedSerialLedger(
   const currency = state.settings.currency || '$';
   const list: SerialLedgerItem[] = [];
 
-  // 1. Add Daily Bets
+  // 1. Add Daily Match Entries
   (state.matchHistory || []).forEach((m) => {
     const rawTime = m.date ? new Date(`${m.date}T${m.matchTime || '12:00'}`).getTime() : 0;
     const profitLossStr =
@@ -48,7 +48,7 @@ export function buildUnifiedSerialLedger(
     list.push({
       serial: 0,
       id: m.id,
-      category: 'BET',
+      category: 'RECORD',
       categoryLabel: 'Recorded Match',
       date: m.date,
       time: m.matchTime || '—',
@@ -194,8 +194,8 @@ export function buildPrintHtml(state: AppState, reportType: PdfReportType): stri
 
   const ledger = buildUnifiedSerialLedger(state, 'asc');
   const filteredLedger =
-    reportType === 'bets'
-      ? ledger.filter((l) => l.category === 'BET')
+    reportType === 'matches'
+      ? ledger.filter((l) => l.category === 'RECORD')
       : reportType === 'epl'
       ? ledger.filter((l) => l.category === 'EPL_MATCH')
       : reportType === 'notes'
@@ -203,7 +203,7 @@ export function buildPrintHtml(state: AppState, reportType: PdfReportType): stri
       : ledger;
 
   const reportTitle =
-    reportType === 'bets'
+    reportType === 'matches'
       ? 'Daily Match History & Performance Report (PDF)'
       : reportType === 'epl'
       ? 'EPL Match Results & Score Ledger (PDF)'
@@ -512,7 +512,7 @@ export function buildPreMatchNotesPrintHtml(
             <div class="field-value">${note.keyPlayers || '<span class="no-entry">— No entry —</span>'}</div>
           </div>
 
-          <div class="field-box field-betting">
+          <div class="field-box field-angle">
             <div class="field-label">💡 7. Key Match Angle</div>
             <div class="field-value">${note.bettingAngle || '<span class="no-entry">— No entry —</span>'}</div>
           </div>
@@ -797,7 +797,7 @@ export interface MarketBetSummary {
   lostBets: number;
   pendingBets: number;
   voidBets: number;
-  winRate: number; // percentage of settled bets
+  winRate: number; // percentage of settled matches
   totalStake: number;
   totalProfit: number;
   totalLoss: number;
@@ -813,8 +813,8 @@ export interface MarketBetSummary {
 }
 
 /**
- * Calculates market-by-market breakdown of user bets:
- * Shows exactly which markets the user won bets on and which markets they lost on.
+ * Calculates market-by-market breakdown of user match performance:
+ * Shows exactly which markets the user won on and which markets they lost on.
  */
 export function calculateMarketBetSummaries(state: AppState): MarketBetSummary[] {
   const matches = state.matchHistory || [];
@@ -934,7 +934,7 @@ export function buildMarketPnlPrintHtml(state: AppState): string {
   ].join('\n');
 
   const tableRows = summaries.length === 0
-    ? '<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">No bet history recorded yet. Place bets in Daily Task or Demo Match to analyze.</td></tr>'
+    ? '<tr><td colspan="8" style="text-align:center;padding:24px;color:#64748b;">No match history recorded yet. Record match entries in Match Center to analyze.</td></tr>'
     : summaries.map((s) => {
         const isNetProfit = s.netPnL > 0;
         const isNetLoss = s.netPnL < 0;
@@ -968,7 +968,7 @@ export function buildMarketPnlPrintHtml(state: AppState): string {
           </td>
           <td style="text-align:center;">
             <span class="badge ${isNetProfit ? 'badge-win' : isNetLoss ? 'badge-loss' : 'badge-pending'}">
-              ${isNetProfit ? 'PROFITABLE' : isNetLoss ? 'LOSING MARKET' : 'BREAK-EVEN'}
+              ${isNetProfit ? 'PROFITABLE' : isNetLoss ? 'DEFICIT MARKET' : 'BREAK-EVEN'}
             </span>
           </td>
         </tr>`;
@@ -978,12 +978,12 @@ export function buildMarketPnlPrintHtml(state: AppState): string {
     '  <div class="header">',
     '    <div>',
     '      <h1 class="title">EPL Market Win & Loss Analysis</h1>',
-    '      <p class="subtitle">Detailed breakdown of winning and losing betting markets</p>',
+    '      <p class="subtitle">Detailed breakdown of winning and losing markets</p>',
     '    </div>',
     '    <div class="meta">',
     '      <div><strong>Printed On:</strong> ' + dateStr + ' ' + timeStr + '</div>',
     '      <div><strong>Markets Active:</strong> ' + summaries.length + '</div>',
-    '      <div><strong>Settled Bets:</strong> ' + totalSettled + '</div>',
+    '      <div><strong>Settled Matches:</strong> ' + totalSettled + '</div>',
     '    </div>',
     '  </div>',
     '  <div class="kpi-grid">',
@@ -996,7 +996,7 @@ export function buildMarketPnlPrintHtml(state: AppState): string {
     '      <div class="kpi-val neg">' + losingMarkets.length + ' Markets</div>',
     '    </div>',
     '    <div class="kpi-card">',
-    '      <div class="kpi-label">Overall Bet Win Rate</div>',
+    '      <div class="kpi-label">Overall Win Rate</div>',
     '      <div class="kpi-val">' + (totalSettled > 0 ? ((totalWon / totalSettled) * 100).toFixed(1) : '0.0') + '% (' + totalWon + 'W/' + totalLost + 'L)</div>',
     '    </div>',
     '    <div class="kpi-card">',
@@ -1009,9 +1009,9 @@ export function buildMarketPnlPrintHtml(state: AppState): string {
     '    <thead>',
     '      <tr>',
     '        <th>Market Name</th>',
-    '        <th style="text-align:center; width: 60px;">Bets</th>',
-    '        <th style="text-align:center; width: 80px;">Won (জিতেছেন)</th>',
-    '        <th style="text-align:center; width: 80px;">Lost (হেরেছেন)</th>',
+    '        <th style="text-align:center; width: 60px;">Total</th>',
+    '        <th style="text-align:center; width: 80px;">Won</th>',
+    '        <th style="text-align:center; width: 80px;">Lost</th>',
     '        <th style="text-align:center; width: 140px;">Win Rate Ratio</th>',
     '        <th style="text-align:right; width: 90px;">Total Staked</th>',
     '        <th style="text-align:right; width: 100px;">Net Profit / Loss</th>',

@@ -51,7 +51,7 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({
   };
 
   const handleOpenPdfReport = () => {
-    const html = buildPrintHtml(state, 'bets');
+    const html = buildPrintHtml(state, 'matches');
     setReportModalData({
       isOpen: true,
       title: 'EPL Match History Journal',
@@ -404,7 +404,7 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({
         </div>
       )}
 
-      {/* BET SLIP MODAL */}
+      {/* MATCH SLIP MODAL */}
       {selectedMatchForSlip && (
         <BetSlipModal
           match={selectedMatchForSlip}

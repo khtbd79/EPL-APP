@@ -108,17 +108,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     return list.sort((a, b) => b.winRate - a.winRate).slice(0, 5);
   }, [eplMatches, totalEplMatches]);
 
-  // 3. WIN & LOSS (User Bets Settled: Won vs Lost)
+  // 3. WIN & LOSS (User Predictions Settled: Won vs Lost)
   const wonCount = fin.winningBets;
   const lostCount = fin.losingBets;
   const settledCount = wonCount + lostCount;
   const winPercent = settledCount > 0 ? (wonCount / settledCount) * 100 : 0;
   const lossPercent = settledCount > 0 ? (lostCount / settledCount) * 100 : 0;
 
-  // 4. PENDING BETS
+  // 4. PENDING MATCHES
   const pendingBets = (state.matchHistory || []).filter((m) => m.result === 'PENDING');
 
-  // 5. USER BET MARKET BREAKDOWN (Won vs Lost per market)
+  // 5. USER PREDICTION MARKET BREAKDOWN (Won vs Lost per market)
   const [marketFilter, setMarketFilter] = useState<'all' | 'won' | 'lost'>('all');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
@@ -155,7 +155,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard</h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            EPL Team Analytics, Market Statistics & User Bet Win/Loss Performance
+            EPL Team Analytics, Market Statistics & Performance Analysis
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -166,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             title="Print Market Win / Loss Report"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>প্রিন্ট রিপোর্ট (PDF)</span>
+            <span>Print Report (PDF)</span>
           </button>
           <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-black font-mono border border-slate-200">
             {totalEplMatches} Matches Synced
@@ -328,7 +328,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* Grid for Win & Loss and Pending Bets */}
+      {/* Grid for Win & Loss and Pending Matches */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ========================================================
             CARD 3: WIN & LOSS (PERCENTAGE GRAPH)
@@ -379,12 +379,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Metric Breakdown Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Won Bets</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Won Matches</div>
                 <div className="text-xl font-black font-mono text-emerald-800 mt-0.5">{wonCount}</div>
               </div>
 
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Lost Bets</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Lost Matches</div>
                 <div className="text-xl font-black font-mono text-rose-800 mt-0.5">{lostCount}</div>
               </div>
 
@@ -404,7 +404,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* ========================================================
-            CARD 4: PENDING BETS
+            CARD 4: PENDING MATCHES
         ======================================================== */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col">
           <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -412,7 +412,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center border border-amber-500/20">
                 <Clock className="w-4 h-4 stroke-[2.2]" />
               </div>
-              <h2 className="text-base font-black text-slate-900 tracking-tight">Pending Bets</h2>
+              <h2 className="text-base font-black text-slate-900 tracking-tight">Pending Matches</h2>
             </div>
             <div className="flex items-center space-x-2">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black font-mono bg-amber-100 text-amber-800 border border-amber-200">
@@ -432,28 +432,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {pendingBets.length === 0 ? (
               <div className="text-center py-8 px-4">
                 <Clock className="w-10 h-10 text-slate-300 mx-auto mb-2.5" />
-                <div className="text-sm font-black text-slate-700">No Pending Bets Active</div>
+                <div className="text-sm font-black text-slate-700">No Pending Matches Active</div>
                 <button
                   onClick={() => setActiveTab('select_match')}
                   className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
                 >
-                  Place New Bet in Select Match
+                  Add Match in Match Center
                 </button>
               </div>
             ) : (
               <div className="divide-y divide-slate-100 overflow-y-auto max-h-[300px]">
-                {pendingBets.map((bet) => (
-                  <div key={bet.id} className="py-3 px-2 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                {pendingBets.map((item) => (
+                  <div key={item.id} className="py-3 px-2 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-extrabold text-slate-900 truncate">
-                        {bet.homeTeam} vs {bet.awayTeam}
+                        {item.homeTeam} vs {item.awayTeam}
                       </div>
                       <div className="text-[11px] font-bold text-slate-500 flex items-center gap-2 mt-0.5">
-                        <span className="text-red-600 font-extrabold">{bet.market}</span>
+                        <span className="text-red-600 font-extrabold">{item.market}</span>
                         <span>•</span>
-                        <span>Odds: <strong className="font-mono text-slate-800">@{bet.odds.toFixed(2)}</strong></span>
+                        <span>Odds: <strong className="font-mono text-slate-800">@{item.odds.toFixed(2)}</strong></span>
                         <span>•</span>
-                        <span>Stake: <strong className="font-mono text-slate-800">{formatMoney(bet.stake, currency)}</strong></span>
+                        <span>Stake: <strong className="font-mono text-slate-800">{formatMoney(item.stake, currency)}</strong></span>
                       </div>
                     </div>
 
@@ -465,14 +465,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       {onUpdateMatchStatus && (
                         <div className="flex items-center space-x-1">
                           <button
-                            onClick={() => onUpdateMatchStatus(bet.id, 'WIN')}
+                            onClick={() => onUpdateMatchStatus(item.id, 'WIN')}
                             className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 cursor-pointer"
                             title="Mark as Won"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => onUpdateMatchStatus(bet.id, 'LOSS')}
+                            onClick={() => onUpdateMatchStatus(item.id, 'LOSS')}
                             className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 cursor-pointer"
                             title="Mark as Lost"
                           >
@@ -490,7 +490,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* ========================================================
-          CARD 5: MARKET BET WIN & LOSS BREAKDOWN (কোন মার্কেটে জিতেছেন / হেরেছেন)
+          CARD 5: MARKET WIN & LOSS BREAKDOWN
       ======================================================== */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {/* Header with Title & Action Controls */}
@@ -502,14 +502,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-black text-slate-900 tracking-tight">
-                  মার্কেট ভিত্তিক বেটিং ফলাফল (Market Win & Loss)
+                  Market Performance Analysis (Win & Loss)
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-red-100 text-red-700">
                   {marketBetSummaries.length} Markets
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                কোন মার্কেটে বিট করে জিতেছেন এবং কোনটিতে হেরেছেন তার স্পষ্ট হিসেব ও বিশ্লেষণ
+                Detailed breakdown of winning and losing market selections
               </p>
             </div>
           </div>
@@ -524,7 +524,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   marketFilter === 'all' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                সব ({marketBetSummaries.length})
+                All ({marketBetSummaries.length})
               </button>
               <button
                 type="button"
@@ -534,7 +534,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 }`}
               >
                 <CheckCircle2 className="w-3 h-3" />
-                <span>জিতেছেন ({winningMarketsCount})</span>
+                <span>Won ({winningMarketsCount})</span>
               </button>
               <button
                 type="button"
@@ -544,7 +544,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 }`}
               >
                 <XCircle className="w-3 h-3" />
-                <span>হেরেছেন ({losingMarketsCount})</span>
+                <span>Lost ({losingMarketsCount})</span>
               </button>
             </div>
 
@@ -555,7 +555,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               title="Print Market Win / Loss Table"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">প্রিন্ট / PDF</span>
+              <span className="hidden sm:inline">Print / PDF</span>
             </button>
           </div>
         </div>
@@ -563,19 +563,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Quick KPI Overview Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 border-b border-slate-100 bg-white text-center">
           <div className="p-3.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">মোট বেটিং মার্কেট</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Markets</div>
             <div className="text-lg font-black font-mono text-slate-900 mt-0.5">{marketBetSummaries.length}</div>
           </div>
           <div className="p-3.5 bg-emerald-50/40">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">লাভজনক মার্কেট (Net Profit)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Profitable Markets (Net Profit)</div>
             <div className="text-lg font-black font-mono text-emerald-800 mt-0.5">{winningMarketsCount}</div>
           </div>
           <div className="p-3.5 bg-rose-50/40">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">ক্ষতিগ্রস্ত মার্কেট (Net Loss)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Deficit Markets (Net Loss)</div>
             <div className="text-lg font-black font-mono text-rose-800 mt-0.5">{losingMarketsCount}</div>
           </div>
           <div className="p-3.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">মোট বেট সম্পন্ন (Settled)</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Settled Matches</div>
             <div className="text-lg font-black font-mono text-slate-900 mt-0.5">{totalUserBetsSettled} Matches</div>
           </div>
         </div>
@@ -584,9 +584,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {filteredMarketSummaries.length === 0 ? (
           <div className="p-8 text-center">
             <BarChart3 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <div className="text-sm font-black text-slate-700">কোনো রেকর্ড পাওয়া যায়নি</div>
+            <div className="text-sm font-black text-slate-700">No Records Found</div>
             <p className="text-xs text-slate-400 mt-1">
-              {marketFilter !== 'all' ? 'এই ফিল্টারে কোনো মার্কেট নেই।' : 'দৈনিক বেট বা ডেমো ম্যাচে বেট রেকর্ড করলে এখানে ফলাফল প্রদর্শিত হবে।'}
+              {marketFilter !== 'all' ? 'No markets match this filter.' : 'Record selections in Match Center to display results.'}
             </p>
           </div>
         ) : (
@@ -594,14 +594,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-50/70 border-b border-slate-100">
-                  <th className="py-3 px-4">Market Name (মার্কেট)</th>
-                  <th className="py-3 px-3 text-center">মোট বেট</th>
-                  <th className="py-3 px-3 text-center text-emerald-700 font-black">জিতেছেন (Won)</th>
-                  <th className="py-3 px-3 text-center text-rose-700 font-black">হেরেছেন (Lost)</th>
-                  <th className="py-3 px-3 text-center">Win Rate অনুপাত</th>
-                  <th className="py-3 px-3 text-right">মোট স্টেক (Stake)</th>
-                  <th className="py-3 px-4 text-right">নেট লাভ / ক্ষতি (P/L)</th>
-                  <th className="py-3 px-4 text-center">স্ট্যাটাস</th>
+                  <th className="py-3 px-4">Market Name</th>
+                  <th className="py-3 px-3 text-center">Total Matches</th>
+                  <th className="py-3 px-3 text-center text-emerald-700 font-black">Won</th>
+                  <th className="py-3 px-3 text-center text-rose-700 font-black">Lost</th>
+                  <th className="py-3 px-3 text-center">Win Rate</th>
+                  <th className="py-3 px-3 text-right">Total Stake</th>
+                  <th className="py-3 px-4 text-right">Net Profit / Loss (P/L)</th>
+                  <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -620,7 +620,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         </div>
                         {m.pendingBets > 0 && (
                           <div className="text-[10px] text-amber-600 font-bold mt-0.5">
-                            ({m.pendingBets} টি বেট চলমান)
+                            ({m.pendingBets} pending)
                           </div>
                         )}
                       </td>
@@ -689,7 +689,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
-                          {isProfit ? 'জিতেছেন' : isLoss ? 'হেরেছেন' : 'সমান (Even)'}
+                          {isProfit ? 'Won' : isLoss ? 'Lost' : 'Even'}
                         </span>
                       </td>
                     </tr>

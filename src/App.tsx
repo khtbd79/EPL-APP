@@ -131,7 +131,7 @@ export default function App() {
     }
   }, [activeTheme]);
 
-  // Handlers for Betting Tasks
+  // Handlers for Match Record Tasks
   const handleRecordMatch = (match: MatchRecord) => {
     const stake = Number(match.stake) || 0;
     const odds = Number(match.odds) || 1;

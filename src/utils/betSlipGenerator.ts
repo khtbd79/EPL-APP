@@ -2,7 +2,7 @@ import { MatchRecord } from '../types';
 import { formatMoney } from './storage';
 
 /**
- * Programmatically renders an ultra-high-definition Bet Slip Ticket image
+ * Programmatically renders an ultra-high-definition Match Slip Ticket image
  * using standard HTML5 Canvas 2D context in a crisp Red & White theme.
  * Guaranteed 100% reliable - zero external dependencies, offline safe.
  */
@@ -378,18 +378,18 @@ function drawSimulatedBarcode(
 }
 
 /**
- * Triggers a direct clean download of the Bet Slip JPEG file on PC, Android WebView, or Mobile.
+ * Triggers a direct clean download of the Match Slip JPEG file on PC, Android WebView, or Mobile.
  */
 export function downloadBetSlipJpeg(match: MatchRecord, currency: string = '$'): boolean {
   if (!match || !match.homeTeam || !match.awayTeam || !match.odds || match.odds <= 1 || !match.stake || match.stake <= 0) {
-    console.warn('Cannot generate bet slip: incomplete match details.');
+    console.warn('Cannot generate match slip: incomplete match details.');
     return false;
   }
 
   try {
     const dataUrl = generateBetSlipJpeg(match, currency);
     if (!dataUrl || dataUrl.length < 100) {
-      console.error('Failed to generate bet slip image.');
+      console.error('Failed to generate match slip image.');
       return false;
     }
 
@@ -425,7 +425,7 @@ export function downloadBetSlipJpeg(match: MatchRecord, currency: string = '$'):
 
     return true;
   } catch (err) {
-    console.error('Error downloading bet slip JPEG:', err);
+    console.error('Error downloading match slip JPEG:', err);
     return false;
   }
 }

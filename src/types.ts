@@ -86,7 +86,7 @@ export interface TeamPreMatchNote {
   keyStrengths: string;         // 4. Key Strengths
   keyWeaknesses: string;        // 5. Key Weaknesses
   keyPlayers: string;           // 6. Key Players
-  bettingAngle?: string;        // Best Betting Angle / Recommendation
+  bettingAngle?: string;        // Best Tactical Angle / Recommendation
   injurySuspension?: string;    // Injury & Missing Players
   // Legacy support
   keyFactor?: string;

@@ -107,7 +107,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
     });
   };
 
-  // Find match record for Bet Slip view
+  // Find match record for Match Slip view
   const handleOpenSlip = (itemId: string) => {
     const found = (state.matchHistory || []).find((m) => m.id === itemId);
     if (found) {
@@ -475,7 +475,7 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
         </div>
       )}
 
-      {/* Bet Slip Modal */}
+      {/* Match Slip Modal */}
       {selectedMatchForSlip && (
         <BetSlipModal
           match={selectedMatchForSlip}

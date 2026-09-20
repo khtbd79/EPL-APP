@@ -145,7 +145,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
     return true;
   };
 
-  // Submit as Pending Bet (Default behavior requested by user)
+  // Submit as Pending Match
   const handleCreatePendingBet = () => {
     if (!validateForm()) return;
 
@@ -171,7 +171,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
 
     onRecordMatch(newMatch);
 
-    // Trigger JPEG Bet Slip Modal immediately as requested
+    // Trigger JPEG Match Slip Modal immediately
     setActiveSlipMatch(newMatch);
     setIsNewSlip(true);
 
@@ -660,7 +660,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
         </div>
       </div>
 
-      {/* BET SLIP MODAL */}
+      {/* MATCH SLIP MODAL */}
       {activeSlipMatch && (
         <BetSlipModal
           match={activeSlipMatch}
