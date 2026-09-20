@@ -48,8 +48,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
   };
 
   const moreMenuItems = [
-    { id: 'standings' as ActiveTab, label: 'Standing (20 Clubs)', icon: <Trophy className="w-5 h-5" />, color: 'amber' },
-    { id: 'team_data' as ActiveTab, label: 'Team Data (38 Weeks)', icon: <Database className="w-5 h-5" />, color: 'red' },
+    { id: 'standings' as ActiveTab, label: 'Standing', icon: <Trophy className="w-5 h-5" />, color: 'amber' },
+    { id: 'team_data' as ActiveTab, label: 'Team Data', icon: <Database className="w-5 h-5" />, color: 'red' },
     { id: 'all_markets' as ActiveTab, label: 'All Markets', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
     { id: 'demo_match' as ActiveTab, label: 'Match Comparison', icon: <Target className="w-5 h-5" />, color: 'emerald' },
     { id: 'select_match' as ActiveTab, label: 'Select Match', icon: <Trophy className="w-5 h-5" />, color: 'red' },

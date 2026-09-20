@@ -46,24 +46,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const fin = calculateFinancials(state);
   const currency = state.settings.currency || 'BDT';
 
-  // 1. TOP 5 TEAMS (Calculated from team match data inputted)
+  // 1. TOP 5 TEAMS (Calculated strictly from user-recorded team match data)
   const standings = calculateEPLStandings(state.eplMatches || []);
-  const top5Teams = standings.slice(0, 5);
+  const teamsWithMatches = standings.filter((t) => t.played > 0);
+  const top5Teams = teamsWithMatches.slice(0, 5);
 
-  // 2. TOP 5 MARKETS (Calculated from inputted match data and records)
+  // 2. TOP 5 MARKETS (Calculated strictly from user-recorded match data)
   const eplMatches = state.eplMatches || [];
   const totalEplMatches = eplMatches.length;
 
   const marketStats = React.useMemo(() => {
+    // If no match/team data is added, NEVER return demo or simulated data
     if (totalEplMatches === 0) {
-      // Benchmark averages based on standard EPL statistical distribution
-      return [
-        { name: 'BTTS YES', winRate: 58.2, count: 0, sample: 'Both Teams Score' },
-        { name: 'Over 2.5 Goals', winRate: 54.6, count: 0, sample: 'High Scoring' },
-        { name: 'Home Win', winRate: 46.8, count: 0, sample: 'Home Dominance' },
-        { name: 'Over 1.5 Goals', winRate: 78.4, count: 0, sample: 'Reliable Line' },
-        { name: 'Clean Sheet', winRate: 32.1, count: 0, sample: 'Defensive Line' },
-      ];
+      return [];
     }
 
     const bttsCount = eplMatches.filter((m) => m.btts).length;
@@ -154,9 +149,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            EPL Team Analytics, Market Statistics & Performance Analysis
-          </p>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -196,75 +188,90 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="p-2 flex-1 flex flex-col justify-center">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                  <th className="py-2.5 px-3 text-center w-8">#</th>
-                  <th className="py-2.5 px-3">Team</th>
-                  <th className="py-2.5 px-2 text-center">P</th>
-                  <th className="py-2.5 px-2 text-center">W</th>
-                  <th className="py-2.5 px-2 text-center">D</th>
-                  <th className="py-2.5 px-2 text-center">L</th>
-                  <th className="py-2.5 px-2 text-center font-mono">GD</th>
-                  <th className="py-2.5 px-3 text-center font-black text-slate-900">PTS</th>
-                  <th className="py-2.5 px-3 text-center hidden sm:table-cell">Form</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
-                {top5Teams.map((team, idx) => (
-                  <tr key={team.team} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-3 text-center font-bold">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-black font-mono">
-                        {idx + 1}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="flex items-center space-x-2.5">
-                        <TeamCrest teamName={team.team} className="w-6 h-6 shrink-0" size={24} />
-                        <span className="font-extrabold text-slate-900 truncate">{team.team}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-2 text-center font-mono text-slate-600">{team.played}</td>
-                    <td className="py-3 px-2 text-center font-mono text-emerald-600 font-bold">{team.won}</td>
-                    <td className="py-3 px-2 text-center font-mono text-orange-600 font-bold">{team.drawn}</td>
-                    <td className="py-3 px-2 text-center font-mono text-red-600 font-bold">{team.lost}</td>
-                    <td className="py-3 px-2 text-center font-mono font-bold">
-                      <span className={team.goalDifference > 0 ? 'text-emerald-600' : team.goalDifference < 0 ? 'text-red-600' : 'text-slate-400'}>
-                        {team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-center font-black font-mono text-slate-900 text-sm">
-                      {team.points}
-                    </td>
-                    <td className="py-3 px-3 text-center hidden sm:table-cell">
-                      {team.form.length === 0 ? (
-                        <span className="text-[10px] text-slate-300">-</span>
-                      ) : (
-                        <div className="flex items-center justify-center space-x-1">
-                          {team.form.map((f, i) => (
-                            <span
-                              key={i}
-                              data-form={f}
-                              className={`w-4 h-4 rounded text-[9px] font-black flex items-center justify-center text-white font-mono ${
-                                f === 'W'
-                                  ? 'form-badge-w bg-green-600'
-                                  : f === 'D'
-                                  ? 'form-badge-d bg-orange-500'
-                                  : 'form-badge-l bg-red-600'
-                              }`}
-                            >
-                              {f}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </td>
+          {top5Teams.length === 0 ? (
+            <div className="p-8 text-center flex-1 flex flex-col items-center justify-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                <Trophy className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div className="text-xs font-bold text-slate-700">No Team Data Recorded</div>
+              <button
+                onClick={() => setActiveTab('team_data')}
+                className="mt-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Go to Team Data
+              </button>
+            </div>
+          ) : (
+            <div className="p-2 flex-1 flex flex-col justify-center">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                    <th className="py-2.5 px-3 text-center w-8">#</th>
+                    <th className="py-2.5 px-3">Team</th>
+                    <th className="py-2.5 px-2 text-center">P</th>
+                    <th className="py-2.5 px-2 text-center">W</th>
+                    <th className="py-2.5 px-2 text-center">D</th>
+                    <th className="py-2.5 px-2 text-center">L</th>
+                    <th className="py-2.5 px-2 text-center font-mono">GD</th>
+                    <th className="py-2.5 px-3 text-center font-black text-slate-900">PTS</th>
+                    <th className="py-2.5 px-3 text-center hidden sm:table-cell">Form</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-50 text-xs font-semibold text-slate-700">
+                  {top5Teams.map((team, idx) => (
+                    <tr key={team.team} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-3 text-center font-bold">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-slate-100 text-slate-800 text-[11px] font-black font-mono">
+                          {idx + 1}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center space-x-2.5">
+                          <TeamCrest teamName={team.team} className="w-6 h-6 shrink-0" size={24} />
+                          <span className="font-extrabold text-slate-900 truncate">{team.team}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-2 text-center font-mono text-slate-600">{team.played}</td>
+                      <td className="py-3 px-2 text-center font-mono text-emerald-600 font-bold">{team.won}</td>
+                      <td className="py-3 px-2 text-center font-mono text-orange-600 font-bold">{team.drawn}</td>
+                      <td className="py-3 px-2 text-center font-mono text-red-600 font-bold">{team.lost}</td>
+                      <td className="py-3 px-2 text-center font-mono font-bold">
+                        <span className={team.goalDifference > 0 ? 'text-emerald-600' : team.goalDifference < 0 ? 'text-red-600' : 'text-slate-400'}>
+                          {team.goalDifference > 0 ? `+${team.goalDifference}` : team.goalDifference}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-center font-black font-mono text-slate-900 text-sm">
+                        {team.points}
+                      </td>
+                      <td className="py-3 px-3 text-center hidden sm:table-cell">
+                        {team.form.length === 0 ? (
+                          <span className="text-[10px] text-slate-300">-</span>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-1">
+                            {team.form.map((f, i) => (
+                              <span
+                                key={i}
+                                data-form={f}
+                                className={`w-4 h-4 rounded text-[9px] font-black flex items-center justify-center text-white font-mono ${
+                                  f === 'W'
+                                    ? 'form-badge-w bg-green-600'
+                                    : f === 'D'
+                                    ? 'form-badge-d bg-orange-500'
+                                    : 'form-badge-l bg-red-600'
+                                }`}
+                              >
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* ========================================================
@@ -287,44 +294,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          <div className="p-5 flex-1 flex flex-col justify-around space-y-4">
-            {marketStats.map((market, idx) => (
-              <div key={market.name} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-4 text-center font-mono font-bold text-slate-400">
-                      {idx + 1}
-                    </span>
-                    <span className="font-extrabold text-slate-900">{market.name}</span>
-                    <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">
-                      ({market.sample})
+          {marketStats.length === 0 ? (
+            <div className="p-8 text-center flex-1 flex flex-col items-center justify-center space-y-2">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+                <TrendingUp className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div className="text-xs font-bold text-slate-700">No Team Data Recorded</div>
+              <button
+                onClick={() => setActiveTab('team_data')}
+                className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Go to Team Data
+              </button>
+            </div>
+          ) : (
+            <div className="p-5 flex-1 flex flex-col justify-around space-y-4">
+              {marketStats.map((market, idx) => (
+                <div key={market.name} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      <span className="w-4 text-center font-mono font-bold text-slate-400">
+                        {idx + 1}
+                      </span>
+                      <span className="font-extrabold text-slate-900">{market.name}</span>
+                      <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">
+                        ({market.sample})
+                      </span>
+                    </div>
+                    <span className="font-black font-mono text-slate-900 text-xs">
+                      {market.winRate.toFixed(1)}%
                     </span>
                   </div>
-                  <span className="font-black font-mono text-slate-900 text-xs">
-                    {market.winRate.toFixed(1)}%
-                  </span>
-                </div>
 
-                {/* Progress Bar Graph */}
-                <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      idx === 0
-                        ? 'bg-red-600'
-                        : idx === 1
-                        ? 'bg-blue-600'
-                        : idx === 2
-                        ? 'bg-emerald-600'
-                        : idx === 3
-                        ? 'bg-indigo-600'
-                        : 'bg-amber-500'
-                    }`}
-                    style={{ width: `${Math.min(100, Math.max(8, market.winRate))}%` }}
-                  />
+                  {/* Progress Bar Graph */}
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        idx === 0
+                          ? 'bg-red-600'
+                          : idx === 1
+                          ? 'bg-blue-600'
+                          : idx === 2
+                          ? 'bg-emerald-600'
+                          : idx === 3
+                          ? 'bg-indigo-600'
+                          : 'bg-amber-500'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(8, market.winRate))}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -360,20 +382,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
 
-              <div className="w-full h-7 bg-slate-100 rounded-xl overflow-hidden flex p-1 gap-1 border border-slate-200">
-                <div
-                  className="h-full bg-emerald-500 rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white font-mono"
-                  style={{ width: `${settledCount === 0 ? 50 : Math.max(5, winPercent)}%` }}
-                >
-                  {settledCount > 0 && winPercent >= 15 ? `${winPercent.toFixed(0)}%` : ''}
+              {settledCount === 0 ? (
+                <div className="w-full h-7 bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 text-[11px] font-bold text-slate-400">
+                  No settled predictions yet
                 </div>
-                <div
-                  className="h-full bg-rose-500 rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white font-mono"
-                  style={{ width: `${settledCount === 0 ? 50 : Math.max(5, lossPercent)}%` }}
-                >
-                  {settledCount > 0 && lossPercent >= 15 ? `${lossPercent.toFixed(0)}%` : ''}
+              ) : (
+                <div className="w-full h-7 bg-slate-100 rounded-xl overflow-hidden flex p-1 gap-1 border border-slate-200">
+                  <div
+                    className="h-full bg-emerald-500 rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white font-mono"
+                    style={{ width: `${Math.max(5, winPercent)}%` }}
+                  >
+                    {winPercent >= 15 ? `${winPercent.toFixed(0)}%` : ''}
+                  </div>
+                  <div
+                    className="h-full bg-rose-500 rounded-lg transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white font-mono"
+                    style={{ width: `${Math.max(5, lossPercent)}%` }}
+                  >
+                    {lossPercent >= 15 ? `${lossPercent.toFixed(0)}%` : ''}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Metric Breakdown Cards */}
@@ -508,9 +536,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {marketBetSummaries.length} Markets
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium">
-                Detailed breakdown of winning and losing market selections
-              </p>
             </div>
           </div>
 
@@ -585,9 +610,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="p-8 text-center">
             <BarChart3 className="w-10 h-10 text-slate-300 mx-auto mb-2" />
             <div className="text-sm font-black text-slate-700">No Records Found</div>
-            <p className="text-xs text-slate-400 mt-1">
-              {marketFilter !== 'all' ? 'No markets match this filter.' : 'Record selections in Match Center to display results.'}
-            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">

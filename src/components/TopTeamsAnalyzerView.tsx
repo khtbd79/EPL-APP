@@ -151,9 +151,6 @@ export const TopTeamsAnalyzerView: React.FC<TopTeamsAnalyzerViewProps> = ({
             <Trophy className="w-6 h-6" />
           </div>
           <h2 className="text-base font-bold text-slate-900">No Team Data Recorded</h2>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-            Record EPL match scores, category rankings, or pre-match notes in Match Center to display team power rankings.
-          </p>
         </div>
       ) : (
         <>

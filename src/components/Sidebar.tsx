@@ -58,10 +58,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const mainNavGroup: { id: ActiveTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { id: 'standings', label: 'Standing', icon: <Trophy className="w-4 h-4 text-amber-500" />, badge: '20 CLUBS' },
-    { id: 'team_data', label: 'Team Data', icon: <Database className="w-4 h-4 text-red-600" />, badge: '38 WEEKS' },
+    { id: 'standings', label: 'Standing', icon: <Trophy className="w-4 h-4 text-amber-500" /> },
+    { id: 'team_data', label: 'Team Data', icon: <Database className="w-4 h-4 text-red-600" /> },
     { id: 'all_markets', label: 'All Markets', icon: <TrendingUp className="w-4 h-4 text-emerald-500" /> },
-    { id: 'demo_match', label: 'Match Comparison', icon: <Target className="w-4 h-4" />, badge: 'SIGNAL' },
+    { id: 'demo_match', label: 'Match Comparison', icon: <Target className="w-4 h-4" /> },
     { id: 'select_match', label: 'Select Match', icon: <Trophy className="w-4 h-4 text-red-600" /> },
     { id: 'report', label: 'Report', icon: <FileText className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-4 h-4" /> },

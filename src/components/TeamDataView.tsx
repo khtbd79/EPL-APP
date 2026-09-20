@@ -1017,7 +1017,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           <Database className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-700">No matches found</h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            No fixtures match your current filter in Matchweek {selectedWeek}. Click "Add Match" to create a fixture or switch weeks.
+            No fixtures match your current filter in Matchweek {selectedWeek}.
           </p>
         </div>
       ) : (
