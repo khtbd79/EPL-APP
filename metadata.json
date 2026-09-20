@@ -1,0 +1,6 @@
+{
+  "name": "EPL Pro Match Center",
+  "description": "EPL Pro Match Center - Odds & percentage calculator, live match select, and analytics",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,250 @@
+@import "tailwindcss";
+
+/* Universal bulletproof typography fallback system */
+:root {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+/* Touch and mobile optimizations */
+html, body {
+  font-family: var(--font-sans);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  overscroll-behavior-y: none;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+button, a, select, input, textarea {
+  touch-action: manipulation;
+  font-family: inherit;
+}
+
+/* Modern Smooth Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+::-webkit-scrollbar-thumb {
+  background: #fca5a5;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
+}
+
+/* Numeric & currency display consistency */
+.font-mono {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@layer utilities {
+  /* Modern High-End Executive Glass/Solid Card - White & Red Theme */
+  .solid-card, .glass-card {
+    background-color: #ffffff;
+    border: 1px solid #fecaca;
+    border-radius: 18px;
+    box-shadow: 0 4px 14px -2px rgba(220, 38, 38, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    position: relative;
+    color: #0f172a;
+  }
+  
+  .solid-card-hover, .glass-card-hover {
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .solid-card-hover:hover, .glass-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: #f87171;
+    box-shadow: 0 10px 25px -4px rgba(220, 38, 38, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Form Inputs - Clean white with red accent focus */
+  .solid-input, .glass-input {
+    background-color: #ffffff;
+    border: 1px solid #fca5a5;
+    color: #0f172a;
+    border-radius: 12px;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .solid-input:focus, .glass-input:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
+
+  /* Badge */
+  .solid-badge {
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+  }
+}
+
+/* =========================================================
+   WHITE & RED THEME GLOBAL RESHAPING & BLACK TEXT
+   ========================================================= */
+
+/* All primary surfaces & panels become clean white with crisp red borders */
+.bg-\[\#0A0E17\], 
+.bg-\[\#080C14\], 
+.bg-\[\#0B0F19\], 
+.bg-\[\#060911\], 
+.bg-\[\#0f172a\],
+.bg-slate-950,
+.bg-slate-900,
+.bg-slate-900\/90,
+.bg-slate-900\/60,
+.bg-slate-900\/80 {
+  background-color: #ffffff !important;
+  border-color: #fecaca !important;
+  color: #0f172a !important;
+}
+
+/* Secondary dark capsules & pills become soft light-red/slate pills */
+.bg-white\/\[0\.03\],
+.bg-white\/\[0\.04\],
+.bg-white\/\[0\.05\],
+.bg-white\/\[0\.06\],
+.bg-white\/\[0\.08\],
+.bg-slate-950\/60,
+.bg-slate-950\/70,
+.bg-slate-950\/80 {
+  background-color: #fef2f2 !important;
+  border-color: #fee2e2 !important;
+  color: #0f172a !important;
+}
+
+/* Text overrides: Default all text on white card backgrounds to dark slate */
+main .solid-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
+main .glass-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
+main .text-white:not(.bg-red-600 *):not(button.bg-red-600 *):not(.badge-red *):not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
+aside .text-white:not(.bg-red-600 *) {
+  color: #0a0a0a !important;
+}
+
+/* Ensure Header and all elements inside red header/navbar have pure white text */
+header,
+header span:not(.text-red-600),
+header div:not(.bg-white *),
+#epl-brand-title,
+.epl-brand-title,
+.bg-red-600 .text-white,
+.bg-red-700 .text-white,
+button.bg-red-600 .text-white {
+  color: #ffffff !important;
+}
+
+main .text-slate-100,
+main .text-slate-200,
+aside .text-slate-100,
+aside .text-slate-200 {
+  color: #0f172a !important;
+}
+
+main .text-slate-300,
+main .text-slate-400,
+aside .text-slate-400 {
+  color: #334155 !important;
+}
+
+main .text-slate-500,
+aside .text-slate-500 {
+  color: #475569 !important;
+}
+
+/* Form outcome badges & indicators: W = Green, D = Orange, L = Red */
+.form-badge-w,
+.badge-form-w,
+[data-form="W"] {
+  background-color: #16a34a !important; /* Green */
+  color: #ffffff !important;
+}
+
+.form-badge-d,
+.badge-form-d,
+[data-form="D"] {
+  background-color: #f97316 !important; /* Orange */
+  color: #ffffff !important;
+}
+
+.form-badge-l,
+.badge-form-l,
+[data-form="L"] {
+  background-color: #dc2626 !important; /* Red */
+  color: #ffffff !important;
+}
+
+/* Tables & Grid styling */
+table th {
+  background-color: #fef2f2 !important;
+  color: #991b1b !important;
+  border-bottom: 2px solid #f87171 !important;
+}
+table tr:hover td {
+  background-color: #fff1f2 !important;
+}
+table td {
+  border-color: #fee2e2 !important;
+  color: #0f172a !important;
+}
+
+/* Header Red preservation: keep text in red header crisp white */
+header.bg-red-600,
+header .bg-red-600 {
+  background-color: #dc2626 !important;
+}
+header.bg-red-600 *,
+header .bg-red-600 * {
+  color: #ffffff !important;
+}
+header .bg-red-600 .bg-white {
+  background-color: #ffffff !important;
+}
+header .bg-red-600 .bg-white * {
+  color: #dc2626 !important;
+}
+header .bg-red-600 .bg-red-950 {
+  background-color: #450a0a !important;
+}
+
+/* Buttons with red background should always have white text */
+.bg-red-600,
+.bg-red-700,
+.bg-red-800 {
+  color: #ffffff !important;
+}
+.bg-red-600 *,
+.bg-red-700 *,
+.bg-red-800 * {
+  color: #ffffff;
+}
+
+/* Smooth Entrance Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.18s ease-out;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
