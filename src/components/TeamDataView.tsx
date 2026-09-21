@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppState, EPLMatchEvent, ActiveTab } from '../types';
 import { ALL_EPL_20_TEAMS, normalizeTeamName, calculateEPLStandings } from '../utils/teamData';
+import { getStoredDraft, setStoredDraft } from '../utils/storage';
 import { TeamCrest } from './TeamCrest';
 import {
   Trophy,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Database,
   ArrowRight,
   Check,
@@ -96,8 +98,16 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
   // Working local matches for the active matchweek to allow smooth editing
   const [rows, setRows] = useState<EditableMatchRow[]>([]);
 
-  // Sync rows whenever selectedWeek changes or new matches arrive in state
+  // Sync rows whenever selectedWeek changes or new matches arrive in state, respecting in-progress drafts
   useEffect(() => {
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    const storedDraft = getStoredDraft<EditableMatchRow[] | null>(draftKey, null);
+
+    if (storedDraft && Array.isArray(storedDraft) && storedDraft.length > 0) {
+      setRows(storedDraft);
+      return;
+    }
+
     if (weekMatchesFromState.length > 0) {
       setRows(
         weekMatchesFromState.map((m) => ({
@@ -123,6 +133,19 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       setRows([]);
     }
   }, [weekMatchesFromState, selectedWeek]);
+
+  // When rows have unsaved changes, auto-save to draft key so a refresh or restart never loses typing
+  useEffect(() => {
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    const hasDirty = rows.some((r) => r.isDirty);
+    if (hasDirty && rows.length > 0) {
+      setStoredDraft(draftKey, rows);
+    } else if (!hasDirty) {
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (_) {}
+    }
+  }, [rows, selectedWeek]);
 
   // Helper: check team usage in current week to detect duplicates across rows
   const getTeamUsageMap = useMemo(() => {
@@ -335,6 +358,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
 
     setRows((prev) => prev.map((r) => ({ ...r, isDirty: false })));
+    try {
+      localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
+    } catch (_) {}
     setToastMessage(`Matchweek ${selectedWeek} matches saved.`);
   };
 
@@ -350,6 +376,10 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     if (!window.confirm(`Clear all matches for Matchweek ${selectedWeek}?`)) {
       return;
     }
+
+    try {
+      localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
+    } catch (_) {}
 
     if (onClearMatchweekMatches) {
       onClearMatchweekMatches(selectedWeek);
@@ -376,117 +406,129 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       )}
 
       {/* Main Header */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-red-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20 shrink-0">
-            <Database className="w-6 h-6 stroke-[2.2]" />
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-red-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20 shrink-0">
+            <Database className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">
               Team Data Entry
             </h1>
           </div>
         </div>
 
         {/* Top Action Bar */}
-        <div className="flex items-center space-x-2.5 flex-wrap gap-y-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           {onNavigateTab && (
             <button
               onClick={() => onNavigateTab('standings')}
-              className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-2 transition-all cursor-pointer border border-slate-200"
+              className="py-2.5 px-3 sm:px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer border border-slate-200 whitespace-nowrap"
             >
-              <Trophy className="w-4 h-4 text-amber-500" />
+              <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
               <span>Standings</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0 hidden sm:inline" />
             </button>
           )}
 
           <button
             onClick={handleSaveAllMatches}
-            className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center space-x-2 shadow-md shadow-red-600/20 transition-all cursor-pointer"
+            className="py-2.5 px-3 sm:px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center justify-center space-x-1.5 shadow-md shadow-red-600/20 transition-all cursor-pointer whitespace-nowrap"
           >
-            <Check className="w-4 h-4 stroke-[3]" />
+            <Check className="w-4 h-4 stroke-[3] shrink-0" />
             <span>Save All Matches</span>
           </button>
         </div>
       </div>
 
       {/* Matchweek Selector Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center space-x-2">
+      <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-xs flex flex-col gap-3">
+        {/* Top Row: Clean Prev / Next & Integrated Matchweek Dropdown */}
+        <div className="flex items-center justify-between gap-2 w-full">
           <button
             disabled={selectedWeek <= 1}
             onClick={() => setSelectedWeek((prev) => Math.max(1, prev - 1))}
-            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1 shrink-0"
             title="Previous Matchweek"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 shrink-0" />
+            <span className="text-xs font-bold hidden sm:inline">Prev</span>
           </button>
 
-          <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl px-4 py-1.5">
-            <Calendar className="w-4 h-4 text-red-600" />
-            <span className="text-sm font-black text-red-700">
-              Matchweek {selectedWeek}
-            </span>
+          {/* Center Matchweek Picker Badge */}
+          <div className="relative flex-1 max-w-xs mx-auto">
+            <div className="flex items-center justify-center space-x-2 bg-red-50 hover:bg-red-100/80 border border-red-200 rounded-xl px-3 py-2 transition-colors cursor-pointer group">
+              <Calendar className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="text-xs sm:text-sm font-black text-red-700 whitespace-nowrap">
+                Matchweek {selectedWeek} of 38
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-red-600 shrink-0 group-hover:translate-y-0.5 transition-transform" />
+            </div>
+            {/* Native touch-friendly select overlaid */}
+            <select
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(Number(e.target.value))}
+              aria-label="Select Matchweek"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
+            >
+              {Array.from({ length: 38 }, (_, i) => i + 1).map((mw) => (
+                <option key={mw} value={mw}>
+                  Matchweek {mw}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
             disabled={selectedWeek >= 38}
             onClick={() => setSelectedWeek((prev) => Math.min(38, prev + 1))}
-            className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer flex items-center gap-1 shrink-0"
             title="Next Matchweek"
           >
-            <ChevronRight className="w-5 h-5" />
+            <span className="text-xs font-bold hidden sm:inline">Next</span>
+            <ChevronRight className="w-5 h-5 shrink-0" />
           </button>
-
-          <select
-            value={selectedWeek}
-            onChange={(e) => setSelectedWeek(Number(e.target.value))}
-            className="text-xs font-bold bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
-          >
-            {Array.from({ length: 38 }, (_, i) => i + 1).map((mw) => (
-              <option key={mw} value={mw}>
-                Matchweek {mw}
-              </option>
-            ))}
-          </select>
         </div>
 
-        {/* Matchweek Quick Status & Actions */}
-        <div className="flex items-center space-x-2 flex-wrap gap-y-2">
-          <div className="flex items-center space-x-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+        {/* Bottom Row: Matchweek Quick Status & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between sm:justify-start space-x-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
             <span>Total: <strong className="text-slate-900 font-bold">{rows.length}</strong></span>
             <span>•</span>
             <span>Finished: <strong className="text-emerald-700 font-bold">{finishedCount}</strong></span>
+            <span>•</span>
+            <span>Unfinished: <strong className="text-amber-700 font-bold">{rows.length - finishedCount}</strong></span>
           </div>
 
-          <button
-            onClick={handleAddNewRow}
-            className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Match</span>
-          </button>
-
-          <button
-            onClick={handleGenerate10Slots}
-            className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
-            title="Generate 10 match slots"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Generate 10 Slots</span>
-          </button>
-
-          {rows.length > 0 && (
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
             <button
-              onClick={handleClearWeek}
-              className="py-1.5 px-2.5 rounded-xl text-red-600 hover:bg-red-50 border border-red-200 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
-              title="Clear matches"
+              onClick={handleAddNewRow}
+              className="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
+              <Plus className="w-3.5 h-3.5 shrink-0" />
+              <span>Add Match</span>
             </button>
-          )}
+
+            <button
+              onClick={handleGenerate10Slots}
+              className="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer shadow-xs whitespace-nowrap"
+              title="Generate 10 match slots"
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>10 Slots</span>
+            </button>
+
+            {rows.length > 0 && (
+              <button
+                onClick={handleClearWeek}
+                className="col-span-2 sm:col-span-1 py-1.5 px-3 rounded-xl text-red-600 hover:bg-red-50 border border-red-200 text-xs font-semibold flex items-center justify-center space-x-1 transition-all cursor-pointer whitespace-nowrap"
+                title="Clear matches"
+              >
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                <span>Reset Week</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -544,8 +586,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 }`}
               >
                 {/* Match Header Bar */}
-                <div className="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs gap-2">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs gap-2">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
                     <span className="font-mono font-black text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
                       Match #{index + 1}
                     </span>
@@ -571,27 +613,27 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   </div>
 
                   {/* Date & Time quick inputs */}
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
                     <input
                       type="date"
                       value={row.date}
                       onChange={(e) => updateRow(index, 'date', e.target.value)}
-                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 sm:flex-none"
                     />
                     <input
                       type="text"
                       value={row.time}
                       onChange={(e) => updateRow(index, 'time', e.target.value)}
                       placeholder="20:00 BST"
-                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 w-24 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
+                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 w-24 sm:w-28 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
                     />
                   </div>
                 </div>
 
                 {/* Team Selection & Score Entry Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-11 gap-3 sm:gap-4 items-center">
                   {/* Home Team Side (cols 1-4) - Dropdown ordered by Standings */}
-                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
+                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 min-w-0">
                     <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
                       <TeamCrest teamName={row.homeTeam} size={28} />
                     </div>
@@ -603,7 +645,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       <select
                         value={row.homeTeam}
                         onChange={(e) => updateRow(index, 'homeTeam', e.target.value)}
-                        className="w-full text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate"
                       >
                         {standingsTeams.map((t) => (
                           <option key={t.name} value={t.name}>
@@ -618,7 +660,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   </div>
 
                   {/* Score Entry Center (cols 5-7) */}
-                  <div className="md:col-span-3 flex flex-col items-center justify-center space-y-1 bg-red-50/40 p-3 rounded-2xl border border-red-100">
+                  <div className="md:col-span-3 flex flex-col items-center justify-center space-y-1 bg-red-50/40 p-2.5 sm:p-3 rounded-2xl border border-red-100">
                     <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
                       Score
                     </span>
@@ -647,15 +689,19 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   </div>
 
                   {/* Away Team Side (cols 8-11) - Dropdown ordered by Standings */}
-                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
-                    <div className="flex-1 min-w-0 space-y-1 text-right md:text-left">
+                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 min-w-0">
+                    <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
+                      <TeamCrest teamName={row.awayTeam} size={28} />
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-1 text-left">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                         Away Team
                       </label>
                       <select
                         value={row.awayTeam}
                         onChange={(e) => updateRow(index, 'awayTeam', e.target.value)}
-                        className="w-full text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate"
                       >
                         {standingsTeams.map((t) => (
                           <option key={t.name} value={t.name}>
@@ -666,10 +712,6 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       <span className="text-[10px] text-slate-400 font-medium truncate block">
                         {getTeamStadium(row.awayTeam)}
                       </span>
-                    </div>
-
-                    <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
-                      <TeamCrest teamName={row.awayTeam} size={28} />
                     </div>
                   </div>
                 </div>
@@ -694,8 +736,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 )}
 
                 {/* Card Bottom Controls */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <div className="text-xs text-slate-500">
+                <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs text-slate-500 truncate max-w-[220px] sm:max-w-none">
                     Venue:{' '}
                     <span className="font-semibold text-slate-700">
                       {getTeamStadium(row.homeTeam)}
@@ -708,7 +750,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       className="py-1.5 px-3 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
                       title="Delete Match"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
                       <span>Delete</span>
                     </button>
 

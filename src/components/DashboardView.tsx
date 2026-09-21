@@ -406,31 +406,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {/* Metric Breakdown Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 whitespace-nowrap">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-2.5 sm:p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 truncate">
                   <span className="hidden sm:inline">Won Matches</span>
                   <span className="sm:hidden">Won</span>
                 </div>
-                <div className="text-xl font-black font-mono text-emerald-800 mt-0.5">{wonCount}</div>
+                <div className="text-lg sm:text-xl font-black font-mono text-emerald-800 mt-0.5 truncate">{wonCount}</div>
               </div>
 
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 whitespace-nowrap">
+              <div className="p-2.5 sm:p-3 bg-rose-50 border border-rose-200 rounded-xl text-center min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 truncate">
                   <span className="hidden sm:inline">Lost Matches</span>
                   <span className="sm:hidden">Lost</span>
                 </div>
-                <div className="text-xl font-black font-mono text-rose-800 mt-0.5">{lostCount}</div>
+                <div className="text-lg sm:text-xl font-black font-mono text-rose-800 mt-0.5 truncate">{lostCount}</div>
               </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Win Rate</div>
-                <div className="text-xl font-black font-mono text-slate-900 mt-0.5">{winPercent.toFixed(1)}%</div>
+              <div className="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">Win Rate</div>
+                <div className="text-lg sm:text-xl font-black font-mono text-slate-900 mt-0.5 truncate">{winPercent.toFixed(1)}%</div>
               </div>
 
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Net Return</div>
-                <div className={`text-xl font-black font-mono mt-0.5 whitespace-nowrap ${fin.netBettingPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+              <div className="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl text-center min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">Net Return</div>
+                <div className={`text-sm sm:text-xl font-black font-mono mt-0.5 truncate ${fin.netBettingPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                   {fin.netBettingPnL >= 0 ? '+' : ''}{formatMoney(fin.netBettingPnL, currency)}
                 </div>
               </div>
@@ -548,7 +548,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Action Buttons: Filter Pills & Print */}
-          <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
             <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs shrink-0">
               <button
                 type="button"

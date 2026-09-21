@@ -113,6 +113,8 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
         ...(parsed.settings || state.settings),
         layoutTheme: targetTheme,
       },
+      lastSavedAt: Date.now(),
+      compoundingState: parsed.compoundingState || state.compoundingState,
     };
 
     if (typeof window !== 'undefined') {
@@ -160,6 +162,8 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
               ...(parsed.settings || state.settings),
               layoutTheme: targetTheme,
             },
+            lastSavedAt: Date.now(),
+            compoundingState: parsed.compoundingState || state.compoundingState,
           };
 
           if (typeof window !== 'undefined') {

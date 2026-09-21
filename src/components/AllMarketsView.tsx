@@ -84,14 +84,14 @@ export const AllMarketsView: React.FC<AllMarketsViewProps> = ({ state, onNavigat
         </div>
 
         {/* Team Scope Filter */}
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2 bg-slate-50 px-3.5 py-2 rounded-2xl border border-slate-200">
-            <Filter className="w-4 h-4 text-slate-400" />
-            <span className="text-xs font-bold text-slate-500">Club:</span>
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <div className="flex items-center space-x-2 bg-slate-50 px-3 sm:px-3.5 py-2 rounded-2xl border border-slate-200 w-full sm:w-auto min-w-0">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="text-xs font-bold text-slate-500 shrink-0">Club:</span>
             <select
               value={selectedTeam}
               onChange={(e) => setSelectedTeam(e.target.value)}
-              className="bg-transparent text-xs sm:text-sm font-extrabold text-slate-900 outline-none cursor-pointer"
+              className="bg-transparent text-xs sm:text-sm font-extrabold text-slate-900 outline-none cursor-pointer truncate w-full"
             >
               <option value="ALL">All 20 Premier League Teams</option>
               {ALL_EPL_TEAM_NAMES.map((t) => (

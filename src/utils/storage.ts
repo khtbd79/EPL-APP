@@ -85,7 +85,22 @@ export const normalizeLoadedState = (parsed: any): AppState => {
     preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : {},
     categoryRankings: parsed.categoryRankings && typeof parsed.categoryRankings === 'object' ? parsed.categoryRankings : {},
     settings,
+    lastSavedAt: typeof parsed.lastSavedAt === 'number' ? parsed.lastSavedAt : undefined,
+    compoundingState: parsed.compoundingState && typeof parsed.compoundingState === 'object' ? parsed.compoundingState : undefined,
   };
+};
+
+export const hasSavedStateData = (state: AppState | null | undefined): boolean => {
+  if (!state) return false;
+  return (
+    (Array.isArray(state.matchHistory) && state.matchHistory.length > 0) ||
+    (Array.isArray(state.eplMatches) && state.eplMatches.length > 0) ||
+    (Array.isArray(state.marketRecords) && state.marketRecords.length > 0) ||
+    (typeof state.currentDay === 'number' && state.currentDay > 1) ||
+    (state.preMatchNotes && Object.keys(state.preMatchNotes).length > 0) ||
+    (state.categoryRankings && Object.keys(state.categoryRankings).length > 0) ||
+    (state.compoundingState && Object.keys(state.compoundingState).length > 0)
+  );
 };
 
 export const loadState = (): AppState => {
@@ -147,21 +162,26 @@ export const loadState = (): AppState => {
   return normalizeLoadedState(parsed);
 };
 
-export const saveState = (state: AppState): void => {
-  if (!state) return;
+export const saveState = (state: AppState): AppState => {
+  if (!state) return state;
+
+  const stateToSave: AppState = {
+    ...state,
+    lastSavedAt: Date.now(),
+  };
 
   // Store in memory for immediate access
   if (typeof window !== 'undefined') {
-    (window as any).__PRELOADED_APP_STATE__ = state;
+    (window as any).__PRELOADED_APP_STATE__ = stateToSave;
   }
 
-  const serialized = JSON.stringify(state);
+  const serialized = JSON.stringify(stateToSave);
 
   // 1. Primary LocalStorage
   try {
     localStorage.setItem(STORAGE_KEY, serialized);
-    if (state.settings?.layoutTheme) {
-      localStorage.setItem('btts_layout_theme', state.settings.layoutTheme);
+    if (stateToSave.settings?.layoutTheme) {
+      localStorage.setItem('btts_layout_theme', stateToSave.settings.layoutTheme);
     }
   } catch (err) {
     console.warn('Failed to save to LocalStorage:', err);
@@ -182,7 +202,9 @@ export const saveState = (state: AppState): void => {
   }
 
   // 4. Durable IndexedDB asynchronous persistence (survives WebView/offline refreshes)
-  saveStateToIndexedDB(state).catch(() => {});
+  saveStateToIndexedDB(stateToSave).catch(() => {});
+
+  return stateToSave;
 };
 
 // Draft storage helper to preserve in-progress user inputs across reloads and tab closures

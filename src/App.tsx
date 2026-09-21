@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking } from './types';
-import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState } from './utils/storage';
+import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState, hasSavedStateData } from './utils/storage';
 import { normalizeTeamName, sanitizeAndDeduplicateMatches } from './utils/teamData';
-import { loadStateFromIndexedDB } from './utils/indexedDbStorage';
+import { loadStateFromIndexedDB, saveStateToIndexedDB } from './utils/indexedDbStorage';
 import { getThemeConfig } from './utils/theme';
 import { Sidebar } from './components/Sidebar';
 import { MobileHeader } from './components/MobileHeader';
@@ -59,25 +59,24 @@ export default function App() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const isHydratedRef = useRef(false);
-
   const activeTheme = getThemeConfig(state.settings.layoutTheme);
 
-  // Save state to LocalStorage whenever state updates (guarded against initial empty overwrite before IndexedDB checks)
+  // Synchronous updater that ensures state and storage are ALWAYS in sync immediately
+  const updateAndSaveState = (updater: (prev: AppState) => AppState) => {
+    setState((prev) => {
+      const next = updater(prev);
+      const saved = saveState(next);
+      stateRef.current = saved;
+      return saved;
+    });
+  };
+
+  // Keep LocalStorage and backup mirrors strictly updated whenever state changes
   useEffect(() => {
-    if (!isHydratedRef.current) {
-      const hasInitialData =
-        (state.matchHistory?.length || 0) +
-          (state.eplMatches?.length || 0) +
-          (state.marketRecords?.length || 0) >
-          0 || state.currentDay > 1;
-      if (hasInitialData) {
-        isHydratedRef.current = true;
-      } else {
-        return;
-      }
+    if (state) {
+      saveState(state);
+      stateRef.current = state;
     }
-    saveState(state);
   }, [state]);
 
   // Persist activeTab to LocalStorage whenever it changes
@@ -85,17 +84,23 @@ export default function App() {
     setStoredDraft('btts_active_tab', activeTab);
   }, [activeTab]);
 
-  // Ensure state is flushed to LocalStorage on beforeunload, pagehide, and visibilitychange
+  // Ensure state is flushed to LocalStorage on beforeunload, pagehide, visibilitychange, and freeze
   useEffect(() => {
     const handleFlushState = () => {
-      if (stateRef.current && isHydratedRef.current) {
+      if (stateRef.current) {
         saveState(stateRef.current);
       }
     };
 
     window.addEventListener('beforeunload', handleFlushState);
     window.addEventListener('pagehide', handleFlushState);
-    document.addEventListener('visibilitychange', handleFlushState);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleFlushState();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('freeze', handleFlushState);
 
     // Multi-tab sync: if data changes in another tab, reload state
     const handleStorageEvent = (e: StorageEvent) => {
@@ -103,43 +108,70 @@ export default function App() {
         try {
           const updated = loadState();
           setState(updated);
+          stateRef.current = updated;
         } catch (_) {}
       }
     };
     window.addEventListener('storage', handleStorageEvent);
 
     // Initial mount check: in WebView environments where localStorage is volatile,
-    // verify if IndexedDB holds an imported/persisted user state
+    // verify if IndexedDB holds an imported/persisted user state and reconcile
     loadStateFromIndexedDB().then((idbState) => {
       if (idbState) {
         const normalized = normalizeLoadedState(idbState);
-        setState((current) => {
-          const currentCount = (current.matchHistory?.length || 0) + (current.eplMatches?.length || 0) + (current.marketRecords?.length || 0);
-          const idbCount = (normalized.matchHistory?.length || 0) + (normalized.eplMatches?.length || 0) + (normalized.marketRecords?.length || 0);
-          const idbHasData = idbCount > 0 || (normalized.currentDay && normalized.currentDay > 1) || Object.keys(normalized.preMatchNotes || {}).length > 0;
+        const idbHasData = hasSavedStateData(normalized);
 
-          if (idbHasData && (idbCount >= currentCount || currentCount === 0)) {
-            const preservedTheme = current.settings?.layoutTheme || (typeof window !== 'undefined' ? (localStorage.getItem('btts_layout_theme') as AppLayoutTheme) : null) || normalized.settings?.layoutTheme;
-            return {
-              ...normalized,
-              settings: {
-                ...normalized.settings,
-                layoutTheme: (preservedTheme as AppLayoutTheme) || 'white_red',
-              },
-            };
-          }
-          return current;
-        });
+        if (idbHasData) {
+          setState((current) => {
+            const currentHasData = hasSavedStateData(current);
+
+            // If current (LocalStorage) has no user data, but IndexedDB has data:
+            // Restore from IndexedDB (e.g. mobile app restart where localStorage was purged)
+            if (!currentHasData) {
+              const preservedTheme = (typeof window !== 'undefined' ? (localStorage.getItem('btts_layout_theme') as AppLayoutTheme) : null) || normalized.settings?.layoutTheme || 'white_red';
+              const restored: AppState = {
+                ...normalized,
+                settings: {
+                  ...normalized.settings,
+                  layoutTheme: preservedTheme,
+                },
+              };
+              saveState(restored);
+              stateRef.current = restored;
+              return restored;
+            }
+
+            // If both have data: compare lastSavedAt timestamps
+            const idbTime = normalized.lastSavedAt || 0;
+            const currentTime = current.lastSavedAt || 0;
+
+            if (idbTime > currentTime) {
+              const preservedTheme = current.settings?.layoutTheme || (typeof window !== 'undefined' ? (localStorage.getItem('btts_layout_theme') as AppLayoutTheme) : null) || normalized.settings?.layoutTheme || 'white_red';
+              const restored: AppState = {
+                ...normalized,
+                settings: {
+                  ...normalized.settings,
+                  layoutTheme: preservedTheme,
+                },
+              };
+              saveState(restored);
+              stateRef.current = restored;
+              return restored;
+            } else {
+              // Current state is newer or equal; ensure IndexedDB gets the latest copy
+              saveStateToIndexedDB(current).catch(() => {});
+              return current;
+            }
+          });
+        }
       }
-      isHydratedRef.current = true;
-    }).catch(() => {
-      isHydratedRef.current = true;
-    });
+    }).catch(() => {});
 
     return () => {
       window.removeEventListener('beforeunload', handleFlushState);
       window.removeEventListener('pagehide', handleFlushState);
-      document.removeEventListener('visibilitychange', handleFlushState);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('freeze', handleFlushState);
       window.removeEventListener('storage', handleStorageEvent);
     };
   }, []);
@@ -190,7 +222,7 @@ export default function App() {
       netPnL,
     };
 
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       matchHistory: [enrichedMatch, ...prev.matchHistory],
       currentDay: match.result === 'PENDING' ? prev.currentDay : prev.currentDay + 1,
@@ -198,7 +230,7 @@ export default function App() {
   };
 
   const handleUpdateMatchStatus = (id: string, result: 'WIN' | 'LOSS' | 'VOID') => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const targetMatch = prev.matchHistory.find((m) => m.id === id);
       if (!targetMatch) return prev;
 
@@ -229,7 +261,7 @@ export default function App() {
   };
 
   const handleDeleteMatch = (id: string) => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       matchHistory: prev.matchHistory.filter((m) => m.id !== id),
     }));
@@ -241,7 +273,7 @@ export default function App() {
   };
 
   const handleSaveEplMatch = (match: EPLMatchEvent) => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const normalizedMatch: EPLMatchEvent = {
         ...match,
         homeTeam: normalizeTeamName(match.homeTeam),
@@ -267,7 +299,7 @@ export default function App() {
   };
 
   const handleDeleteEplMatch = (id: string) => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const matches = prev.eplMatches || [];
       return {
         ...prev,
@@ -277,7 +309,7 @@ export default function App() {
   };
 
   const handleBatchSaveEplMatches = (matchesToSave: EPLMatchEvent[]) => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const existing = prev.eplMatches || [];
       const incomingIds = new Set(matchesToSave.map((m) => m.id));
       const remainingExisting = existing.filter((m) => !incomingIds.has(m.id));
@@ -294,14 +326,14 @@ export default function App() {
   };
 
   const handleClearMatchweekMatches = (matchweek: number) => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       eplMatches: (prev.eplMatches || []).filter((m) => m.matchweek !== matchweek),
     }));
   };
 
   const handleSetMatchweek = (matchweek: number) => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       currentMatchweek: matchweek,
       settings: {
@@ -313,14 +345,14 @@ export default function App() {
 
   // Market Record Handlers (Multi-Market Demo)
   const handleAddMarketRecord = (entry: MarketRecordEntry) => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       marketRecords: [entry, ...(prev.marketRecords || [])],
     }));
   };
 
   const handleUpdateMarketRecordResult = (id: string, result: 'PENDING' | 'WIN' | 'LOSS' | 'VOID') => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const records = prev.marketRecords || [];
       return {
         ...prev,
@@ -330,7 +362,7 @@ export default function App() {
   };
 
   const handleDeleteMarketRecord = (id: string) => {
-    setState((prev) => {
+    updateAndSaveState((prev) => {
       const records = prev.marketRecords || [];
       return {
         ...prev,
@@ -340,7 +372,7 @@ export default function App() {
   };
 
   const handleSaveCategoryRanking = (ranking: MatchweekCategoryRanking) => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       categoryRankings: {
         ...(prev.categoryRankings || {}),
@@ -355,7 +387,7 @@ export default function App() {
         localStorage.setItem('btts_layout_theme', settings.layoutTheme);
       } catch (_) {}
     }
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       settings,
     }));
@@ -367,7 +399,7 @@ export default function App() {
         localStorage.setItem('btts_layout_theme', newTheme);
       } catch (_) {}
     }
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       settings: {
         ...prev.settings,
@@ -377,7 +409,7 @@ export default function App() {
   };
 
   const handleResetCycle = () => {
-    setState((prev) => ({
+    updateAndSaveState((prev) => ({
       ...prev,
       currentDay: 1,
       matchHistory: [],
@@ -386,14 +418,16 @@ export default function App() {
 
   const handleClearAll = () => {
     clearAllData();
-    setState(loadState());
+    const fresh = loadState();
+    stateRef.current = fresh;
+    setState(fresh);
     setActiveTab('dashboard');
   };
 
   const handleRestoreState = (newState: AppState) => {
-    isHydratedRef.current = true;
-    saveState(newState);
-    setState(newState);
+    const saved = saveState(newState);
+    stateRef.current = saved;
+    setState(saved);
   };
 
   return (
@@ -438,6 +472,7 @@ export default function App() {
               state={state}
               setActiveTab={setActiveTab}
               onRecordMatch={handleRecordMatch}
+              onUpdateMatchStatus={handleUpdateMatchStatus}
             />
           )}
 

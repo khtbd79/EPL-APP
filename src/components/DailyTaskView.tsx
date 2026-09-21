@@ -325,8 +325,8 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-200 text-xs">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                       <div>
                         <span className="text-slate-500">Stake: </span>
                         <span className="font-mono font-black text-slate-900">{formatMoney(match.stake, currency)}</span>
@@ -341,16 +341,16 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
                       <button
                         onClick={() => {
                           onUpdateMatchStatus(match.id, 'WIN');
                           setSuccessBanner(`Match marked as WIN! Profit +${formatMoney(matchProfit, currency)} credited to balance.`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-black rounded-xl text-xs flex items-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        className="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                         <span>WIN</span>
                       </button>
 
@@ -360,9 +360,9 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                           setSuccessBanner(`Match marked as LOSS. Stake -${formatMoney(match.stake, currency)} deducted from balance.`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-black rounded-xl text-xs flex items-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        className="flex-1 sm:flex-none py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
+                        <XCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>LOSS</span>
                       </button>
 
@@ -372,9 +372,9 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                           setSuccessBanner(`Match marked as VOID (Refunded).`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs flex items-center space-x-1 transition-all active:scale-95 cursor-pointer"
+                        className="flex-1 sm:flex-none py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                       >
-                        <Ban className="w-3.5 h-3.5" />
+                        <Ban className="w-3.5 h-3.5 shrink-0" />
                         <span>VOID</span>
                       </button>
                     </div>

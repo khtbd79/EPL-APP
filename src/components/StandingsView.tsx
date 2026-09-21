@@ -54,22 +54,22 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ state, onNavigateT
         </div>
 
         {/* View Mode Filters: Overall / Home / Away */}
-        <div className="flex items-center space-x-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           {onNavigateTab && (
             <button
               onClick={() => onNavigateTab('team_data')}
-              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer border border-slate-200"
+              className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer border border-slate-200 whitespace-nowrap"
             >
-              <Database className="w-3.5 h-3.5 text-red-600" />
+              <Database className="w-3.5 h-3.5 text-red-600 shrink-0" />
               <span>Enter Scores</span>
             </button>
           )}
-          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
+          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs font-bold">
             <button
               onClick={() => setFilterMode('overall')}
-              className={`py-2 px-3.5 rounded-xl transition-all cursor-pointer ${
+              className={`py-1.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 filterMode === 'overall'
-                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30'
+                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30 font-black'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -77,9 +77,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ state, onNavigateT
             </button>
             <button
               onClick={() => setFilterMode('home')}
-              className={`py-2 px-3.5 rounded-xl transition-all cursor-pointer ${
+              className={`py-1.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 filterMode === 'home'
-                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30'
+                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30 font-black'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -87,9 +87,9 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ state, onNavigateT
             </button>
             <button
               onClick={() => setFilterMode('away')}
-              className={`py-2 px-3.5 rounded-xl transition-all cursor-pointer ${
+              className={`py-1.5 px-3 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                 filterMode === 'away'
-                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30'
+                  ? 'bg-red-600 text-white shadow-sm shadow-red-600/30 font-black'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -127,8 +127,8 @@ export const StandingsView: React.FC<StandingsViewProps> = ({ state, onNavigateT
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-black uppercase tracking-wider text-slate-500">
-                <th className="py-3.5 px-3 text-center w-12">#</th>
-                <th className="py-3.5 px-4 min-w-[200px]">Club</th>
+                <th className="py-3.5 px-3 text-center w-10 sm:w-12">#</th>
+                <th className="py-3.5 px-3 sm:px-4 min-w-[140px] sm:min-w-[200px]">Club</th>
                 <th className="py-3.5 px-2.5 text-center">MP</th>
                 <th className="py-3.5 px-2.5 text-center">W</th>
                 <th className="py-3.5 px-2.5 text-center">D</th>

@@ -146,6 +146,7 @@ export interface AppState {
   categoryRankings?: CategoryRankingsMap;
   settings: AppSettings;
   lastSavedAt?: number; // Timestamp for sync and persistence validation
+  compoundingState?: any;
 }
 
 export interface TeamAnalyzerStats {
