@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking } from './types';
 import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState } from './utils/storage';
+import { normalizeTeamName } from './utils/teamData';
 import { loadStateFromIndexedDB } from './utils/indexedDbStorage';
 import { getThemeConfig } from './utils/theme';
 import { Sidebar } from './components/Sidebar';
@@ -241,24 +242,29 @@ export default function App() {
 
   const handleSaveEplMatch = (match: EPLMatchEvent) => {
     setState((prev) => {
+      const normalizedMatch: EPLMatchEvent = {
+        ...match,
+        homeTeam: normalizeTeamName(match.homeTeam),
+        awayTeam: normalizeTeamName(match.awayTeam),
+      };
       const matches = prev.eplMatches || [];
       const index = matches.findIndex(
         (m) =>
-          m.id === match.id ||
-          (m.matchweek === match.matchweek &&
-            m.homeTeam.trim().toLowerCase() === match.homeTeam.trim().toLowerCase() &&
-            m.awayTeam.trim().toLowerCase() === match.awayTeam.trim().toLowerCase())
+          m.id === normalizedMatch.id ||
+          (m.matchweek === normalizedMatch.matchweek &&
+            normalizeTeamName(m.homeTeam).toLowerCase() === normalizeTeamName(normalizedMatch.homeTeam).toLowerCase() &&
+            normalizeTeamName(m.awayTeam).toLowerCase() === normalizeTeamName(normalizedMatch.awayTeam).toLowerCase())
       );
 
       const updatedMatches =
         index >= 0
-          ? matches.map((m, i) => (i === index ? { ...m, ...match } : m))
-          : [match, ...matches];
+          ? matches.map((m, i) => (i === index ? { ...m, ...normalizedMatch } : m))
+          : [normalizedMatch, ...matches];
 
       return {
         ...prev,
         eplMatches: updatedMatches,
-        currentMatchweek: match.matchweek || prev.currentMatchweek || 1,
+        currentMatchweek: normalizedMatch.matchweek || prev.currentMatchweek || 1,
       };
     });
   };

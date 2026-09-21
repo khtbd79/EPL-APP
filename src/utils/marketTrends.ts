@@ -1,4 +1,5 @@
 import { EPLMatchEvent } from '../types';
+import { normalizeTeamName } from './teamData';
 
 export type MarketKey =
   | 'BTTS'
@@ -64,7 +65,7 @@ export const ALL_MARKET_DEFINITIONS: MarketDefinition[] = [
     check: (m, team) => {
       if (!team) return m.winner === 'HOME';
       // If specific team: did team win at home?
-      if (m.homeTeam === team) return m.winner === 'HOME';
+      if (normalizeTeamName(m.homeTeam).toLowerCase() === normalizeTeamName(team).toLowerCase()) return m.winner === 'HOME';
       return null;
     },
   },
@@ -75,7 +76,7 @@ export const ALL_MARKET_DEFINITIONS: MarketDefinition[] = [
     color: '#ec4899', // pink
     check: (m, team) => {
       if (!team) return m.winner === 'AWAY';
-      if (m.awayTeam === team) return m.winner === 'AWAY';
+      if (normalizeTeamName(m.awayTeam).toLowerCase() === normalizeTeamName(team).toLowerCase()) return m.winner === 'AWAY';
       return null;
     },
   },
@@ -95,8 +96,9 @@ export const ALL_MARKET_DEFINITIONS: MarketDefinition[] = [
       if (!team) {
         return m.cleanSheetTeam === 'HOME' || m.cleanSheetTeam === 'AWAY' || m.cleanSheetTeam === 'BOTH';
       }
-      if (m.homeTeam === team) return m.awayScore === 0;
-      if (m.awayTeam === team) return m.homeScore === 0;
+      const normTeam = normalizeTeamName(team).toLowerCase();
+      if (normalizeTeamName(m.homeTeam).toLowerCase() === normTeam) return m.awayScore === 0;
+      if (normalizeTeamName(m.awayTeam).toLowerCase() === normTeam) return m.homeScore === 0;
       return false;
     },
   },
@@ -150,8 +152,13 @@ export function calculateMarketTrends(
   totalMatchesCount: number;
 } {
   // Filter matches if team is selected
-  const eligibleMatches = teamFilter && teamFilter !== 'ALL'
-    ? matches.filter((m) => m.homeTeam === teamFilter || m.awayTeam === teamFilter)
+  const normalizedTeamFilter = teamFilter && teamFilter !== 'ALL' ? normalizeTeamName(teamFilter).toLowerCase() : null;
+  const eligibleMatches = normalizedTeamFilter
+    ? matches.filter((m) => {
+        const h = normalizeTeamName(m.homeTeam).toLowerCase();
+        const a = normalizeTeamName(m.awayTeam).toLowerCase();
+        return h === normalizedTeamFilter || a === normalizedTeamFilter;
+      })
     : matches;
 
   if (eligibleMatches.length === 0) {

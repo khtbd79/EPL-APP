@@ -8,7 +8,8 @@ import {
   calculateH2H,
   getTeamInfo,
   TeamStandingData,
-  EPLTeamInfo
+  EPLTeamInfo,
+  normalizeTeamName
 } from '../utils/teamData';
 import { generateId, getStoredDraft, setStoredDraft } from '../utils/storage';
 import { printPdfDocument, buildPrintHtml } from '../utils/pdfGenerator';
@@ -1215,7 +1216,9 @@ export const EPLMatchCenterView: React.FC<EPLMatchCenterViewProps> = ({
               {ALL_EPL_20_TEAMS.map((team) => {
                 const isSelected = selectedTeamProfileId === team.id;
                 const teamMatchesCount = (state.eplMatches || []).filter(
-                  (m) => m.homeTeam === team.name || m.awayTeam === team.name
+                  (m) =>
+                    normalizeTeamName(m.homeTeam).toLowerCase() === team.name.toLowerCase() ||
+                    normalizeTeamName(m.awayTeam).toLowerCase() === team.name.toLowerCase()
                 ).length;
 
                 return (
@@ -1354,10 +1357,12 @@ export const EPLMatchCenterView: React.FC<EPLMatchCenterViewProps> = ({
               ) : (
                 <div className="space-y-2">
                   {selectedTeamProfile.matches.map((m) => {
-                    const isHome = m.homeTeam.toLowerCase() === selectedTeamProfile.info.name.toLowerCase();
+                    const isHome =
+                      normalizeTeamName(m.homeTeam).toLowerCase() ===
+                      normalizeTeamName(selectedTeamProfile.info.name).toLowerCase();
                     const teamScore = isHome ? m.homeScore : m.awayScore;
                     const oppScore = isHome ? m.awayScore : m.homeScore;
-                    const oppTeam = isHome ? m.awayTeam : m.homeTeam;
+                    const oppTeam = isHome ? normalizeTeamName(m.awayTeam) : normalizeTeamName(m.homeTeam);
 
                     let outcome: 'W' | 'D' | 'L' = 'D';
                     if (teamScore > oppScore) outcome = 'W';

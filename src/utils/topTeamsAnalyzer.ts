@@ -1,5 +1,5 @@
 import { AppState, TopTeamAnalysis, TopTeamsAnalysisReport, TierLevel } from '../types';
-import { ALL_EPL_20_TEAMS } from './teamData';
+import { ALL_EPL_20_TEAMS, normalizeTeamName } from './teamData';
 
 /**
  * Analyzes all user-recorded EPL data (matches, weekly category rankings, pre-match notes)
@@ -31,15 +31,15 @@ export function analyzeTop5Teams(state: AppState): TopTeamsAnalysisReport {
     // Matches involving this team
     const teamMatches = matches.filter(
       (m) =>
-        m.homeTeam.toLowerCase().trim() === cleanName ||
-        m.awayTeam.toLowerCase().trim() === cleanName
+        normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanName ||
+        normalizeTeamName(m.awayTeam).toLowerCase().trim() === cleanName
     );
 
     const homeMatches = matches.filter(
-      (m) => m.homeTeam.toLowerCase().trim() === cleanName
+      (m) => normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanName
     );
     const awayMatches = matches.filter(
-      (m) => m.awayTeam.toLowerCase().trim() === cleanName
+      (m) => normalizeTeamName(m.awayTeam).toLowerCase().trim() === cleanName
     );
 
     let wins = 0;
@@ -56,7 +56,7 @@ export function analyzeTop5Teams(state: AppState): TopTeamsAnalysisReport {
     let htOver05Count = 0;
 
     teamMatches.forEach((m) => {
-      const isHome = m.homeTeam.toLowerCase().trim() === cleanName;
+      const isHome = normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanName;
       const myGoals = isHome ? m.homeScore : m.awayScore;
       const oppGoals = isHome ? m.awayScore : m.homeScore;
       const totalMatchGoals = m.homeScore + m.awayScore;

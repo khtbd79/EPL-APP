@@ -323,36 +323,82 @@ export interface TeamGroundDetail {
 // Standardized alias mapping so historical abbreviations and colloquial team names resolve to official full names
 export const HISTORICAL_TEAM_ALIASES: Record<string, string> = {
   'ars': 'Arsenal',
+  'arsenal': 'Arsenal',
+  'arsenal fc': 'Arsenal',
   'avl': 'Aston Villa',
+  'aston villa': 'Aston Villa',
+  'aston villa fc': 'Aston Villa',
+  'villa': 'Aston Villa',
   'bou': 'Bournemouth',
   'afc bournemouth': 'Bournemouth',
+  'bournemouth': 'Bournemouth',
+  'bournemouth fc': 'Bournemouth',
   'bre': 'Brentford',
+  'brentford': 'Brentford',
+  'brentford fc': 'Brentford',
   'bha': 'Brighton & Hove Albion',
   'brighton': 'Brighton & Hove Albion',
+  'brighton & hove': 'Brighton & Hove Albion',
+  'brighton and hove albion': 'Brighton & Hove Albion',
+  'brighton & hove albion fc': 'Brighton & Hove Albion',
   'che': 'Chelsea',
+  'chelsea': 'Chelsea',
+  'chelsea fc': 'Chelsea',
   'cry': 'Crystal Palace',
+  'palace': 'Crystal Palace',
+  'crystal palace': 'Crystal Palace',
+  'crystal palace fc': 'Crystal Palace',
   'eve': 'Everton',
+  'everton': 'Everton',
+  'everton fc': 'Everton',
   'ful': 'Fulham',
+  'fulham': 'Fulham',
+  'fulham fc': 'Fulham',
   'hul': 'Hull City',
   'hull': 'Hull City',
+  'hull city': 'Hull City',
+  'hull city afc': 'Hull City',
   'ips': 'Ipswich Town',
   'ipswich': 'Ipswich Town',
+  'ipswich town': 'Ipswich Town',
+  'ipswich town fc': 'Ipswich Town',
   'lee': 'Leeds United',
   'leeds': 'Leeds United',
+  'leeds united': 'Leeds United',
+  'leeds united fc': 'Leeds United',
   'liv': 'Liverpool',
+  'liverpool': 'Liverpool',
+  'liverpool fc': 'Liverpool',
   'mci': 'Manchester City',
   'man city': 'Manchester City',
+  'manchester city': 'Manchester City',
+  'manchester city fc': 'Manchester City',
   'mun': 'Manchester United',
   'man utd': 'Manchester United',
+  'man united': 'Manchester United',
+  'manchester united': 'Manchester United',
+  'manchester united fc': 'Manchester United',
   'new': 'Newcastle United',
   'newcastle': 'Newcastle United',
+  'newcastle united': 'Newcastle United',
+  'newcastle united fc': 'Newcastle United',
   'for': 'Nottingham Forest',
   'forest': 'Nottingham Forest',
+  'nottingham': 'Nottingham Forest',
+  'nottingham forest': 'Nottingham Forest',
+  'nottingham forest fc': 'Nottingham Forest',
   'sun': 'Sunderland',
+  'sunderland': 'Sunderland',
+  'sunderland afc': 'Sunderland',
   'tot': 'Tottenham Hotspur',
   'tottenham': 'Tottenham Hotspur',
+  'tottenham hotspur': 'Tottenham Hotspur',
+  'tottenham hotspur fc': 'Tottenham Hotspur',
+  'spurs': 'Tottenham Hotspur',
   'cov': 'Coventry City',
   'coventry': 'Coventry City',
+  'coventry city': 'Coventry City',
+  'coventry city fc': 'Coventry City',
 };
 
 export const normalizeTeamName = (rawName: string): string => {
@@ -361,6 +407,39 @@ export const normalizeTeamName = (rawName: string): string => {
   if (HISTORICAL_TEAM_ALIASES[clean]) {
     return HISTORICAL_TEAM_ALIASES[clean];
   }
+
+  // Check direct match against ALL_EPL_20_TEAMS name, fullName, shortName, id
+  const directMatch = ALL_EPL_20_TEAMS.find(
+    (t) =>
+      t.name.toLowerCase() === clean ||
+      t.fullName.toLowerCase() === clean ||
+      t.shortName.toLowerCase() === clean ||
+      t.id.toLowerCase() === clean
+  );
+  if (directMatch) {
+    return directMatch.name;
+  }
+
+  // Check stripped common prefixes or suffixes
+  const stripped = clean
+    .replace(/^afc\s+/i, '')
+    .replace(/\s+(fc|afc)$/i, '')
+    .trim();
+
+  if (HISTORICAL_TEAM_ALIASES[stripped]) {
+    return HISTORICAL_TEAM_ALIASES[stripped];
+  }
+
+  const strippedMatch = ALL_EPL_20_TEAMS.find(
+    (t) =>
+      t.name.toLowerCase() === stripped ||
+      t.fullName.toLowerCase() === stripped ||
+      t.shortName.toLowerCase() === stripped
+  );
+  if (strippedMatch) {
+    return strippedMatch.name;
+  }
+
   return rawName.trim();
 };
 
@@ -522,8 +601,10 @@ export const calculateEPLStandings = (matches: EPLMatchEvent[]): TeamStandingDat
   const sortedMatches = [...matches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   sortedMatches.forEach((m) => {
-    const home = standingsMap[m.homeTeam];
-    const away = standingsMap[m.awayTeam];
+    const homeTeamKey = normalizeTeamName(m.homeTeam);
+    const awayTeamKey = normalizeTeamName(m.awayTeam);
+    const home = standingsMap[homeTeamKey] || standingsMap[m.homeTeam];
+    const away = standingsMap[awayTeamKey] || standingsMap[m.awayTeam];
 
     if (!home || !away) return;
 
@@ -630,6 +711,7 @@ export interface TeamDetailedProfile {
 
 export const getTeamDetailedProfile = (teamName: string, matches: EPLMatchEvent[]): TeamDetailedProfile => {
   const resolvedName = normalizeTeamName(teamName);
+  const cleanTarget = resolvedName.toLowerCase();
   const info = getTeamInfo(resolvedName) || {
     id: resolvedName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
     name: resolvedName,
@@ -644,14 +726,20 @@ export const getTeamDetailedProfile = (teamName: string, matches: EPLMatchEvent[
   };
 
   const standings = calculateEPLStandings(matches);
-  const standing = standings.find((s) => s.team.toLowerCase() === teamName.toLowerCase());
+  const standing = standings.find((s) => normalizeTeamName(s.team).toLowerCase() === cleanTarget);
 
-  const teamMatches = matches.filter(
-    (m) => m.homeTeam.toLowerCase() === teamName.toLowerCase() || m.awayTeam.toLowerCase() === teamName.toLowerCase()
+  const teamMatches = matches.filter((m) => {
+    const normHome = normalizeTeamName(m.homeTeam).toLowerCase();
+    const normAway = normalizeTeamName(m.awayTeam).toLowerCase();
+    return normHome === cleanTarget || normAway === cleanTarget;
+  });
+
+  const homeMatches = teamMatches.filter(
+    (m) => normalizeTeamName(m.homeTeam).toLowerCase() === cleanTarget
   );
-
-  const homeMatches = teamMatches.filter((m) => m.homeTeam.toLowerCase() === teamName.toLowerCase());
-  const awayMatches = teamMatches.filter((m) => m.awayTeam.toLowerCase() === teamName.toLowerCase());
+  const awayMatches = teamMatches.filter(
+    (m) => normalizeTeamName(m.awayTeam).toLowerCase() === cleanTarget
+  );
 
   const totalPlayed = teamMatches.length;
   let failedToScore = 0;
@@ -663,7 +751,7 @@ export const getTeamDetailedProfile = (teamName: string, matches: EPLMatchEvent[
   let wins = 0;
 
   teamMatches.forEach((m) => {
-    const isHome = m.homeTeam.toLowerCase() === teamName.toLowerCase();
+    const isHome = normalizeTeamName(m.homeTeam).toLowerCase() === cleanTarget;
     const teamScore = isHome ? m.homeScore : m.awayScore;
     const oppScore = isHome ? m.awayScore : m.homeScore;
 
@@ -678,7 +766,7 @@ export const getTeamDetailedProfile = (teamName: string, matches: EPLMatchEvent[
   });
 
   return {
-    team: teamName,
+    team: resolvedName,
     info,
     standing,
     matches: teamMatches,
@@ -711,11 +799,17 @@ export interface H2HSummary {
 }
 
 export const calculateH2H = (teamA: string, teamB: string, matches: EPLMatchEvent[]): H2HSummary => {
-  const h2hMatches = matches.filter(
-    (m) =>
-      (m.homeTeam.toLowerCase() === teamA.toLowerCase() && m.awayTeam.toLowerCase() === teamB.toLowerCase()) ||
-      (m.homeTeam.toLowerCase() === teamB.toLowerCase() && m.awayTeam.toLowerCase() === teamA.toLowerCase())
-  );
+  const normTeamA = normalizeTeamName(teamA).toLowerCase();
+  const normTeamB = normalizeTeamName(teamB).toLowerCase();
+
+  const h2hMatches = matches.filter((m) => {
+    const normHome = normalizeTeamName(m.homeTeam).toLowerCase();
+    const normAway = normalizeTeamName(m.awayTeam).toLowerCase();
+    return (
+      (normHome === normTeamA && normAway === normTeamB) ||
+      (normHome === normTeamB && normAway === normTeamA)
+    );
+  });
 
   let teamAWins = 0;
   let teamBWins = 0;
@@ -726,7 +820,7 @@ export const calculateH2H = (teamA: string, teamB: string, matches: EPLMatchEven
   let over25Count = 0;
 
   h2hMatches.forEach((m) => {
-    const isTeamAHome = m.homeTeam.toLowerCase() === teamA.toLowerCase();
+    const isTeamAHome = normalizeTeamName(m.homeTeam).toLowerCase() === normTeamA;
     const aScore = isTeamAHome ? m.homeScore : m.awayScore;
     const bScore = isTeamAHome ? m.awayScore : m.homeScore;
 
@@ -742,8 +836,8 @@ export const calculateH2H = (teamA: string, teamB: string, matches: EPLMatchEven
   });
 
   return {
-    teamA,
-    teamB,
+    teamA: normalizeTeamName(teamA),
+    teamB: normalizeTeamName(teamB),
     totalMatches: h2hMatches.length,
     teamAWins,
     teamBWins,

@@ -4,7 +4,7 @@ import {
   PreMatchNotesMap,
   SavedAnalysisRecord,
 } from '../types';
-import { ALL_EPL_20_TEAMS, getTeamInfo } from './teamData';
+import { ALL_EPL_20_TEAMS, getTeamInfo, normalizeTeamName } from './teamData';
 
 export type SignalGrade = 'STRONG' | 'SOLID' | 'MODERATE' | 'CAUTION' | 'AVOID';
 
@@ -85,19 +85,22 @@ function calculateVenuePerformance(
   matches: EPLMatchEvent[],
   categoryRankings?: CategoryRankingsMap
 ): TeamMatchPerformance {
-  const teamInfo = getTeamInfo(teamName);
-  const cleanTeam = teamName.toLowerCase().trim();
+  const normalizedTeam = normalizeTeamName(teamName);
+  const teamInfo = getTeamInfo(normalizedTeam);
+  const cleanTeam = normalizedTeam.toLowerCase().trim();
 
   // All matches involving this team
   const allTeamMatches = matches.filter(
-    (m) => m.homeTeam.toLowerCase().trim() === cleanTeam || m.awayTeam.toLowerCase().trim() === cleanTeam
+    (m) =>
+      normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanTeam ||
+      normalizeTeamName(m.awayTeam).toLowerCase().trim() === cleanTeam
   );
 
   // Matches played at this specific venue (Home vs Away)
   const venueMatches = matches.filter((m) =>
     isHomeVenue
-      ? m.homeTeam.toLowerCase().trim() === cleanTeam
-      : m.awayTeam.toLowerCase().trim() === cleanTeam
+      ? normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanTeam
+      : normalizeTeamName(m.awayTeam).toLowerCase().trim() === cleanTeam
   );
 
   // Look for latest Category ranking
@@ -249,14 +252,14 @@ function calculateVenuePerformance(
  * Calculates Head-to-Head record between Home & Away
  */
 function analyzeH2H(homeTeam: string, awayTeam: string, matches: EPLMatchEvent[]): H2HAnalysis {
-  const cleanHome = homeTeam.toLowerCase().trim();
-  const cleanAway = awayTeam.toLowerCase().trim();
+  const cleanHome = normalizeTeamName(homeTeam).toLowerCase().trim();
+  const cleanAway = normalizeTeamName(awayTeam).toLowerCase().trim();
 
-  const h2hMatches = matches.filter(
-    (m) =>
-      (m.homeTeam.toLowerCase().trim() === cleanHome && m.awayTeam.toLowerCase().trim() === cleanAway) ||
-      (m.homeTeam.toLowerCase().trim() === cleanAway && m.awayTeam.toLowerCase().trim() === cleanHome)
-  );
+  const h2hMatches = matches.filter((m) => {
+    const h = normalizeTeamName(m.homeTeam).toLowerCase().trim();
+    const a = normalizeTeamName(m.awayTeam).toLowerCase().trim();
+    return (h === cleanHome && a === cleanAway) || (h === cleanAway && a === cleanHome);
+  });
 
   let homeWins = 0;
   let awayWins = 0;
@@ -267,7 +270,7 @@ function analyzeH2H(homeTeam: string, awayTeam: string, matches: EPLMatchEvent[]
   let over25Count = 0;
 
   h2hMatches.forEach((m) => {
-    const isActualHome = m.homeTeam.toLowerCase().trim() === cleanHome;
+    const isActualHome = normalizeTeamName(m.homeTeam).toLowerCase().trim() === cleanHome;
     const hScore = isActualHome ? m.homeScore : m.awayScore;
     const aScore = isActualHome ? m.awayScore : m.homeScore;
 

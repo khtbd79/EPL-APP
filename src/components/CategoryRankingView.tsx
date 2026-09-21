@@ -5,7 +5,7 @@ import {
   MatchweekCategoryRanking,
   TierLevel
 } from '../types';
-import { ALL_EPL_20_TEAMS, EPLTeamInfo } from '../utils/teamData';
+import { ALL_EPL_20_TEAMS, EPLTeamInfo, normalizeTeamName } from '../utils/teamData';
 import {
   ListOrdered,
   Save,
@@ -165,21 +165,23 @@ export const CategoryRankingView: React.FC<CategoryRankingViewProps> = ({
     });
 
     (appState.eplMatches || []).forEach((m) => {
-      if (!table[m.homeTeam]) table[m.homeTeam] = { points: 0, gd: 0, gf: 0, name: m.homeTeam };
-      if (!table[m.awayTeam]) table[m.awayTeam] = { points: 0, gd: 0, gf: 0, name: m.awayTeam };
+      const homeTeam = normalizeTeamName(m.homeTeam);
+      const awayTeam = normalizeTeamName(m.awayTeam);
+      if (!table[homeTeam]) table[homeTeam] = { points: 0, gd: 0, gf: 0, name: homeTeam };
+      if (!table[awayTeam]) table[awayTeam] = { points: 0, gd: 0, gf: 0, name: awayTeam };
 
-      table[m.homeTeam].gf += m.homeScore;
-      table[m.homeTeam].gd += m.homeScore - m.awayScore;
-      table[m.awayTeam].gf += m.awayScore;
-      table[m.awayTeam].gd += m.awayScore - m.homeScore;
+      table[homeTeam].gf += m.homeScore;
+      table[homeTeam].gd += m.homeScore - m.awayScore;
+      table[awayTeam].gf += m.awayScore;
+      table[awayTeam].gd += m.awayScore - m.homeScore;
 
       if (m.winner === 'HOME') {
-        table[m.homeTeam].points += 3;
+        table[homeTeam].points += 3;
       } else if (m.winner === 'AWAY') {
-        table[m.awayTeam].points += 3;
+        table[awayTeam].points += 3;
       } else if (m.winner === 'DRAW') {
-        table[m.homeTeam].points += 1;
-        table[m.awayTeam].points += 1;
+        table[homeTeam].points += 1;
+        table[awayTeam].points += 1;
       }
     });
 

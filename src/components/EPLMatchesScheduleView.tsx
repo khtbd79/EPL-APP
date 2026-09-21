@@ -10,7 +10,8 @@ import { TeamCrest } from './TeamCrest';
 import {
   ALL_EPL_20_TEAMS,
   calculateEPLStandings,
-  calculateH2H
+  calculateH2H,
+  normalizeTeamName
 } from '../utils/teamData';
 import {
   Calendar,
@@ -36,9 +37,9 @@ import {
 } from 'lucide-react';
 
 export const EPL_20_TEAMS_LIST = [
-  'AFC Bournemouth',
   'Arsenal',
   'Aston Villa',
+  'Bournemouth',
   'Brentford',
   'Brighton & Hove Albion',
   'Chelsea',
@@ -306,8 +307,8 @@ export const EPLMatchesScheduleView: React.FC<EPLMatchesScheduleViewProps> = ({
         (m) =>
           m.id === match.id ||
           (m.matchweek === merged.matchweek &&
-            m.homeTeam.toLowerCase().trim() === merged.homeTeam.toLowerCase().trim() &&
-            m.awayTeam.toLowerCase().trim() === merged.awayTeam.toLowerCase().trim())
+            normalizeTeamName(m.homeTeam).toLowerCase().trim() === normalizeTeamName(merged.homeTeam).toLowerCase().trim() &&
+            normalizeTeamName(m.awayTeam).toLowerCase().trim() === normalizeTeamName(merged.awayTeam).toLowerCase().trim())
       );
 
       if (recordedMatch) {
@@ -437,8 +438,8 @@ export const EPLMatchesScheduleView: React.FC<EPLMatchesScheduleViewProps> = ({
         matchweek: selectedWeek,
         date: editForm.fullDate,
         matchTime: timeBST,
-        homeTeam: editForm.homeTeam,
-        awayTeam: editForm.awayTeam,
+        homeTeam: normalizeTeamName(editForm.homeTeam),
+        awayTeam: normalizeTeamName(editForm.awayTeam),
         venue: venue.stadium,
         homeScore: hScore,
         awayScore: aScore,
@@ -483,8 +484,8 @@ export const EPLMatchesScheduleView: React.FC<EPLMatchesScheduleViewProps> = ({
       matchweek: match.matchweek || selectedWeek,
       date: match.fullDate || match.dateStr,
       matchTime: match.timeBST,
-      homeTeam: match.homeTeam,
-      awayTeam: match.awayTeam,
+      homeTeam: normalizeTeamName(match.homeTeam),
+      awayTeam: normalizeTeamName(match.awayTeam),
       venue: match.stadium || `${match.homeTeam} Stadium`,
       homeScore: hScore,
       awayScore: aScore,
