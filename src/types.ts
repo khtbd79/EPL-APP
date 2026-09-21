@@ -145,6 +145,7 @@ export interface AppState {
   preMatchNotes?: Record<string, TeamPreMatchNote>;
   categoryRankings?: CategoryRankingsMap;
   settings: AppSettings;
+  lastSavedAt?: number; // Timestamp for sync and persistence validation
 }
 
 export interface TeamAnalyzerStats {
