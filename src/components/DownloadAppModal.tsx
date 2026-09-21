@@ -224,31 +224,11 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Package className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-bold text-slate-900">Android APK Package (100% Offline)</span>
+              <span className="text-sm font-bold text-slate-900">Android APK (.ZIP)</span>
             </div>
             <span className="text-[10px] font-mono text-emerald-700 font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
-              WebIntoApp Ready
+              Offline
             </span>
-          </div>
-
-          <p className="text-xs text-slate-600 leading-relaxed">
-            মোবাইলে ইনস্টল করার জন্য WebIntoApp দিয়ে এররমুক্ত অফলাইন APK তৈরি করুন। কোনো ইন্টারনেট সংযোগ বা সার্ভার ছাড়াই চলবে।
-          </p>
-
-          {/* WebIntoApp Guide & Error Fix Note */}
-          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs space-y-2">
-            <div className="font-black flex items-center space-x-1.5 text-emerald-900">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>১০০% সম্পূর্ণ অফলাইন বান্ডেল প্রস্তুত (Oops এরর ফিক্সড):</span>
-            </div>
-            <div className="text-[11px] text-emerald-900 space-y-1.5 leading-relaxed">
-              <p className="bg-emerald-100/70 p-2 rounded-lg font-medium">
-                <strong>কেন আগে জিপ দিয়ে বানালেও Oops আসত?</strong> কোডের ভেতরে ব্যাকগ্রাউন্ড সার্ভিস-ওয়ার্কার কল চালু ছিল, যা ইন্টারনেট না থাকায় ফেইল করত এবং WebIntoApp Oops পেজ দেখাত। সেটি এখন কোড থেকে সম্পূর্ণ বাদ দিয়ে ১০০% ক্লিন করা হয়েছে।
-              </p>
-              <div className="space-y-1 pt-1 font-medium">
-                <p><strong>✅ WebIntoApp দিয়ে বানানোর নিয়ম:</strong> নিচের বাটন থেকে <strong>.zip</strong> ডাউনলোড করে WebIntoApp-এ <strong>"Upload HTML / ZIP File"</strong> মোডে আপলোড করুন। বিল্ড করার সময় সেটিংসে "Internet Connection Check" বন্ধ (OFF / Disabled) রাখবেন।</p>
-              </div>
-            </div>
           </div>
 
           <button

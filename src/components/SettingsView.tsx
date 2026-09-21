@@ -335,9 +335,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   10 Themes
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Select from 10 distinct color themes including Dark Mode. Click any theme to apply instantly.
-              </p>
             </div>
           </div>
 
@@ -451,11 +448,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </h3>
                     </div>
                   </div>
-
-                  {/* Description */}
-                  <p className="text-[10px] text-slate-500 line-clamp-2 mb-3 leading-relaxed">
-                    {theme.description}
-                  </p>
                 </div>
 
                 {/* Bottom Action Button */}

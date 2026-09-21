@@ -59,10 +59,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             <button
               onClick={onOpenDownloadModal}
               className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold border border-white/30 active:scale-95 transition-all cursor-pointer"
-              title="মোবাইলে অ্যাপ ইনস্টল ও Oops এরর সমাধান"
+              title="Download App"
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>অ্যাপ ইনস্টল</span>
+              <span>App</span>
             </button>
           )}
         </div>

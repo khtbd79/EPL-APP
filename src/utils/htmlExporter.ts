@@ -869,40 +869,13 @@ Quick APK Creation Guide (WebIntoApp):
 ------------------------------------------------------------------------
 1. Go to https://www.webintoapp.com
 2. Click "Make App".
-3. Choose "Upload HTML / ZIP File" (or "All in One").
+3. Choose "Upload HTML / ZIP File".
 4. Upload this downloaded ZIP file.
 5. App Name: EPL Match Center
-6. IMPORTANT WEBINFO: Under Settings / Advanced Settings, ensure "Internet Connection Check" is set to DISABLED (OFF).
-7. Click "Make App" / "Create App" and install your APK!
+6. Settings: Set "Internet Connection Check" to Disabled.
+7. Click "Create App".
 ========================================================================`;
     zip.file('README_WebIntoApp_Guide.txt', readmeText);
-
-    const banglaGuide = `========================================================================
-EPL ম্যাচ সেন্টার - WebIntoApp ১০০% সম্পূর্ণ অফলাইন APK গাইড
-========================================================================
-
-আমরা অ্যাপের কোড পরীক্ষা করে "Oops" আসার মূল কারণ খুঁজে বের করেছি এবং সমাধান করেছি:
-
-১. কেন জিপ ফাইল দিয়ে বানালেও আগে "Oops" আসত?
-   - কোডের ভেতরে আগে একটি ব্যাকগ্রাউন্ড সার্ভিস-ওয়ার্কার (/sw.js) এবং বাহ্যিক আইকন লিঙ্ক ছিল। 
-   - মোবাইল অ্যাপ ওপেন করার পর WebView ব্যাকগ্রাউন্ডে সেই ফাইলটি খোঁজার চেষ্টা করত। 
-   - ইন্টারনেট না থাকায় রিকোয়েস্ট ফেইল হত এবং WebIntoApp তৎক্ষণাৎ "Oops. Please make sure the device is connected to the internet" এরর স্ক্রিন দেখাত।
-   - এখন সেই সার্ভিস-ওয়ার্কার ও নেটওয়ার্ক রিকোয়েস্ট সম্পূর্ণ বাদ দেওয়া হয়েছে (১০০% ক্লিন)।
-
-২. কোডের বর্তমান অবস্থা (১০০% অফলাইন ভেরিফাইড):
-   - কোনো ইন্টারনেট রিকোয়েস্ট (fetch / network call) নেই।
-   - সব ফন্ট ও ২০টি ক্লাবের লোগো/ক্রেস্ট সরাসরি কোডের ভেতরে (Base64 ও Inline SVG) এমবেড করা।
-   - কোনো এক্সটার্নাল ফাইল লোড হবে না।
-
-৩. WebIntoApp দিয়ে নতুন জিপ থেকে APK বানানোর সহজ ধাপ:
-   ১. https://www.webintoapp.com এ যান।
-   ২. "Make App" বাটনে ক্লিক করুন।
-   ৩. "Upload HTML / ZIP File" অপশন বেছে এই জিপ ফাইলটি আপলোড করুন।
-   ৪. App Name দিন: EPL Match Center
-   ৫. গুরুত্বপূর্ণ: WebIntoApp এর সেটিংস বা এডভান্স সেটিংস এ "Internet Connection Check" অপশনটি OFF / Disable রাখবেন (যাতে WebIntoApp নিজ থেকে ইন্টারনেট চেক না করে)।
-   ৬. "Create App" এ ক্লিক করে APK ডাউনলোড করুন এবং ফোনে চালান। এখন ইন্টারনেট ছাড়াও সরাসরি অ্যাপ খুলবে!
-========================================================================`;
-    zip.file('WEBINTOAPP_BANGLA_GUIDE.txt', banglaGuide);
 
     const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);

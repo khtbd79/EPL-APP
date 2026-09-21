@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AppState, EPLMatchEvent, ActiveTab } from '../types';
-import { ALL_EPL_20_TEAMS, normalizeTeamName } from '../utils/teamData';
+import { ALL_EPL_20_TEAMS, normalizeTeamName, calculateEPLStandings } from '../utils/teamData';
 import { TeamCrest } from './TeamCrest';
 import {
   Trophy,
@@ -19,11 +19,6 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
-
-// Sorted 20 official EPL teams for the dropdowns matching Standings exactly
-export const EPL_TEAMS_SORTED = [...ALL_EPL_20_TEAMS].sort((a, b) =>
-  a.name.localeCompare(b.name)
-);
 
 // Helper to auto-lookup venue for the selected home team
 export const getTeamStadium = (teamName: string): string => {
@@ -79,6 +74,17 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
   }, [toastMessage]);
 
+  // Dynamic Standings: Ordered 1 to 20 matching the official Standings table
+  const standingsTeams = useMemo(() => {
+    const standings = calculateEPLStandings(state.eplMatches || []);
+    return standings.map((item, index) => ({
+      rank: index + 1,
+      name: item.team,
+      points: item.points,
+      played: item.played,
+    }));
+  }, [state.eplMatches]);
+
   // Extract all existing saved matches from state for the selected matchweek
   const weekMatchesFromState = useMemo(() => {
     const list = (state.eplMatches || []).filter(
@@ -120,7 +126,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
   // Helper: check team usage in current week to detect duplicates across rows
   const getTeamUsageMap = useMemo(() => {
-    const usage = new Map<string, number[]>(); // teamNameLower -> row indices
+    const usage = new Map<string, number[]>();
     rows.forEach((row, idx) => {
       const hKey = normalizeTeamName(row.homeTeam).toLowerCase().trim();
       const aKey = normalizeTeamName(row.awayTeam).toLowerCase().trim();
@@ -145,7 +151,6 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       prev.map((r, i) => {
         if (i !== index) return r;
         const updated = { ...r, [field]: val, isDirty: true };
-        // Auto-update status if scores are entered
         if (field === 'homeScore' || field === 'awayScore') {
           const h = field === 'homeScore' ? val : r.homeScore;
           const a = field === 'awayScore' ? val : r.awayScore;
@@ -160,24 +165,23 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     );
   };
 
-  // Add a new single match row with clean dropdown defaults
+  // Add a new single match row with standings-based defaults
   const handleAddNewRow = () => {
-    // Find two unused teams for this matchweek
     const usedTeams = new Set<string>();
     rows.forEach((r) => {
       usedTeams.add(normalizeTeamName(r.homeTeam).toLowerCase());
       usedTeams.add(normalizeTeamName(r.awayTeam).toLowerCase());
     });
 
-    const availableTeams = EPL_TEAMS_SORTED.filter(
+    const availableTeams = standingsTeams.filter(
       (t) => !usedTeams.has(t.name.toLowerCase())
     );
 
-    const defaultHome = availableTeams[0]?.name || EPL_TEAMS_SORTED[0].name;
+    const defaultHome = availableTeams[0]?.name || standingsTeams[0]?.name || 'Arsenal';
     const defaultAway =
       availableTeams[1]?.name ||
-      EPL_TEAMS_SORTED.find((t) => t.name !== defaultHome)?.name ||
-      EPL_TEAMS_SORTED[1].name;
+      standingsTeams.find((t) => t.name !== defaultHome)?.name ||
+      'Chelsea';
 
     const newRow: EditableMatchRow = {
       id: `mw${selectedWeek}_custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -193,27 +197,26 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     };
 
     setRows((prev) => [...prev, newRow]);
-    setToastMessage('নতুন ম্যাচ স্লট যোগ করা হয়েছে। ড্রপডাউন থেকে টিম নির্বাচন করুন।');
+    setToastMessage('Match slot added.');
   };
 
-  // Generate 10 empty match slots for this matchweek
+  // Generate 10 empty match slots for this matchweek matching standings pairs
   const handleGenerate10Slots = () => {
     if (
       rows.length > 0 &&
       !window.confirm(
-        `ম্যাচউইক ${selectedWeek}-এর বিদ্যমান ম্যাচগুলো প্রতিস্থাপন করে ১০টি নতুন স্লট সাজাতে চান?`
+        `Replace existing matches in Matchweek ${selectedWeek} with 10 slots?`
       )
     ) {
       return;
     }
 
-    // Pair the 20 teams into 10 matches
     const new10Rows: EditableMatchRow[] = [];
     const dateStr = new Date().toISOString().split('T')[0];
 
     for (let i = 0; i < 10; i++) {
-      const homeTeam = EPL_TEAMS_SORTED[i * 2]?.name || 'Arsenal';
-      const awayTeam = EPL_TEAMS_SORTED[i * 2 + 1]?.name || 'Chelsea';
+      const homeTeam = standingsTeams[i * 2]?.name || 'Arsenal';
+      const awayTeam = standingsTeams[i * 2 + 1]?.name || 'Chelsea';
 
       new10Rows.push({
         id: `mw${selectedWeek}_slot_${i + 1}_${Date.now()}`,
@@ -230,13 +233,13 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
 
     setRows(new10Rows);
-    setToastMessage(`ম্যাচউইক ${selectedWeek}-এর জন্য ১০টি ম্যাচের স্লট তৈরি হয়েছে!`);
+    setToastMessage(`Generated 10 match slots for Matchweek ${selectedWeek}.`);
   };
 
   // Save single match
   const handleSaveSingleMatch = (row: EditableMatchRow, index: number) => {
     if (!row.homeTeam || !row.awayTeam) {
-      alert('অনুগ্রহ করে হোম ও অ্যাওয়ে উভয় দল নির্বাচন করুন।');
+      alert('Please select both Home and Away teams.');
       return;
     }
 
@@ -244,7 +247,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       normalizeTeamName(row.homeTeam).toLowerCase() ===
       normalizeTeamName(row.awayTeam).toLowerCase()
     ) {
-      alert('হোম ও অ্যাওয়ে দল একই হতে পারে না!');
+      alert('Home and Away teams cannot be the same.');
       return;
     }
 
@@ -278,26 +281,23 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       prev.map((r, i) => (i === index ? { ...r, isDirty: false } : r))
     );
 
-    setToastMessage(
-      `ম্যাচ #${index + 1} (${row.homeTeam} বনাম ${row.awayTeam}) সফলভাবে সংরক্ষিত হয়েছে এবং পয়েন্ট টেবিল আপডেট হয়েছে!`
-    );
+    setToastMessage(`Match #${index + 1} (${row.homeTeam} vs ${row.awayTeam}) saved.`);
   };
 
   // Save all matches in this matchweek
   const handleSaveAllMatches = () => {
     if (rows.length === 0) {
-      alert('সংরক্ষণ করার মতো কোনো ম্যাচ পাওয়া যায়নি। প্রথমে ম্যাচ যোগ করুন।');
+      alert('No matches to save.');
       return;
     }
 
-    // Validate for identical home/away teams
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
       if (
         normalizeTeamName(r.homeTeam).toLowerCase() ===
         normalizeTeamName(r.awayTeam).toLowerCase()
       ) {
-        alert(`ম্যাচ #${i + 1}-এ হোম ও অ্যাওয়ে দল একই (${r.homeTeam}) হতে পারে না!`);
+        alert(`Match #${i + 1}: Home and Away teams cannot be the same (${r.homeTeam}).`);
         return;
       }
     }
@@ -335,25 +335,19 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
 
     setRows((prev) => prev.map((r) => ({ ...r, isDirty: false })));
-    setToastMessage(
-      `ম্যাচউইক ${selectedWeek}-এর সকল (${rows.length}টি) ম্যাচ সফলভাবে সংরক্ষিত ও পয়েন্ট টেবিল হালনাগাদ করা হয়েছে!`
-    );
+    setToastMessage(`Matchweek ${selectedWeek} matches saved.`);
   };
 
   // Delete row
   const handleDeleteRow = (id: string, index: number) => {
     onDeleteEplMatch(id);
     setRows((prev) => prev.filter((_, i) => i !== index));
-    setToastMessage(`ম্যাচ #${index + 1} মুছে ফেলা হয়েছে।`);
+    setToastMessage(`Match #${index + 1} deleted.`);
   };
 
   // Clear all matches for this matchweek
   const handleClearWeek = () => {
-    if (
-      !window.confirm(
-        `ম্যাচউইক ${selectedWeek}-এর সমস্ত ম্যাচ মুছে ফেলতে চান? এতে এই সপ্তাহের ম্যাচগুলো পয়েন্ট টেবিল থেকে মুছে যাবে।`
-      )
-    ) {
+    if (!window.confirm(`Clear all matches for Matchweek ${selectedWeek}?`)) {
       return;
     }
 
@@ -364,10 +358,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
 
     setRows([]);
-    setToastMessage(`ম্যাচউইক ${selectedWeek}-এর সব ম্যাচ মুছে ফেলা হয়েছে।`);
+    setToastMessage(`Matchweek ${selectedWeek} matches cleared.`);
   };
 
-  // Summary counts for this week
   const finishedCount = rows.filter(
     (r) => r.homeScore.trim() !== '' && r.awayScore.trim() !== ''
   ).length;
@@ -390,11 +383,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              টিম ডাটা ও ম্যাচ স্কোর এন্ট্রি
+              Team Data Entry
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              স্টেন্ডিংয়ের সাথে মিল রেখে ড্রপডাউন থেকে টিম নির্বাচন করুন এবং স্কোর এন্ট্রি দিন
-            </p>
           </div>
         </div>
 
@@ -406,7 +396,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
               className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-2 transition-all cursor-pointer border border-slate-200"
             >
               <Trophy className="w-4 h-4 text-amber-500" />
-              <span>পয়েন্ট টেবিল দেখুন</span>
+              <span>Standings</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </button>
           )}
@@ -416,7 +406,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center space-x-2 shadow-md shadow-red-600/20 transition-all cursor-pointer"
           >
             <Check className="w-4 h-4 stroke-[3]" />
-            <span>সকল ম্যাচ সেভ করুন</span>
+            <span>Save All Matches</span>
           </button>
         </div>
       </div>
@@ -428,7 +418,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             disabled={selectedWeek <= 1}
             onClick={() => setSelectedWeek((prev) => Math.max(1, prev - 1))}
             className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-            title="পূর্ববর্তী ম্যাচউইক"
+            title="Previous Matchweek"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -436,7 +426,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl px-4 py-1.5">
             <Calendar className="w-4 h-4 text-red-600" />
             <span className="text-sm font-black text-red-700">
-              ম্যাচউইক {selectedWeek} (Matchweek {selectedWeek})
+              Matchweek {selectedWeek}
             </span>
           </div>
 
@@ -444,12 +434,11 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             disabled={selectedWeek >= 38}
             onClick={() => setSelectedWeek((prev) => Math.min(38, prev + 1))}
             className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-            title="পরবর্তী ম্যাচউইক"
+            title="Next Matchweek"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
 
-          {/* Direct Dropdown for Jump to any Matchweek */}
           <select
             value={selectedWeek}
             onChange={(e) => setSelectedWeek(Number(e.target.value))}
@@ -457,7 +446,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           >
             {Array.from({ length: 38 }, (_, i) => i + 1).map((mw) => (
               <option key={mw} value={mw}>
-                সপ্তাহ {mw} (MW {mw})
+                Matchweek {mw}
               </option>
             ))}
           </select>
@@ -466,9 +455,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
         {/* Matchweek Quick Status & Actions */}
         <div className="flex items-center space-x-2 flex-wrap gap-y-2">
           <div className="flex items-center space-x-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <span>মোট ম্যাচ: <strong className="text-slate-900 font-bold">{rows.length}</strong></span>
+            <span>Total: <strong className="text-slate-900 font-bold">{rows.length}</strong></span>
             <span>•</span>
-            <span>সমাপ্ত: <strong className="text-emerald-700 font-bold">{finishedCount}</strong></span>
+            <span>Finished: <strong className="text-emerald-700 font-bold">{finishedCount}</strong></span>
           </div>
 
           <button
@@ -476,26 +465,26 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ নতুন ম্যাচ যোগ করুন</span>
+            <span>Add Match</span>
           </button>
 
           <button
             onClick={handleGenerate10Slots}
             className="py-1.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
-            title="এই সপ্তাহের জন্য ১০টি ম্যাচের স্লট তৈরি করুন"
+            title="Generate 10 match slots"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>+ ১০টি স্লট তৈরি করুন</span>
+            <span>Generate 10 Slots</span>
           </button>
 
           {rows.length > 0 && (
             <button
               onClick={handleClearWeek}
               className="py-1.5 px-2.5 rounded-xl text-red-600 hover:bg-red-50 border border-red-200 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
-              title="এই সপ্তাহের সব ম্যাচ রিসেট করুন"
+              title="Clear matches"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>রিসেট</span>
+              <span>Reset</span>
             </button>
           )}
         </div>
@@ -509,11 +498,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           </div>
           <div className="max-w-md mx-auto space-y-1">
             <h3 className="text-base sm:text-lg font-black text-slate-800">
-              ম্যাচউইক {selectedWeek}-এ এখনও কোনো ম্যাচ যোগ করা হয়নি
+              No Matches in Matchweek {selectedWeek}
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              আগে থেকে কোনো ফিক্সড দল বসানো নেই। আপনি নিজের সুবিধামতো ড্রপডাউন থেকে টিম বেছে ম্যাচ ও স্কোর বসাতে পারেন।
-            </p>
           </div>
 
           <div className="flex items-center justify-center space-x-3 pt-2">
@@ -522,14 +508,14 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
               className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-md shadow-red-600/20 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              <span>এই সপ্তাহের ১০টি ম্যাচের স্লট তৈরি করুন</span>
+              <span>Generate 10 Slots</span>
             </button>
             <button
               onClick={handleAddNewRow}
               className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold flex items-center space-x-2 border border-slate-200 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>একটি একক ম্যাচ যোগ করুন</span>
+              <span>Add Single Match</span>
             </button>
           </div>
         </div>
@@ -540,7 +526,6 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             const aNorm = normalizeTeamName(row.awayTeam).toLowerCase().trim();
             const isSameTeam = hNorm === aNorm && hNorm !== '';
 
-            // Check if home or away team is used in another match in this week
             const homeMatches = getTeamUsageMap.get(hNorm) || [];
             const awayMatches = getTeamUsageMap.get(aNorm) || [];
             const isHomeDoubleBooked = homeMatches.length > 1;
@@ -562,25 +547,25 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 <div className="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs gap-2">
                   <div className="flex items-center space-x-2">
                     <span className="font-mono font-black text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                      ম্যাচ #{index + 1}
+                      Match #{index + 1}
                     </span>
 
                     {/* Status Badge */}
                     {isPlayed ? (
                       <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold flex items-center space-x-1">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>খেলা সমাপ্ত (Finished)</span>
+                        <span>Finished</span>
                       </span>
                     ) : (
                       <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-semibold flex items-center space-x-1">
                         <Clock className="w-3 h-3 text-slate-400" />
-                        <span>আসন্ন (Upcoming)</span>
+                        <span>Upcoming</span>
                       </span>
                     )}
 
                     {row.isDirty && (
                       <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-bold text-[10px]">
-                        অসংরক্ষিত পরিবর্তন
+                        Unsaved
                       </span>
                     )}
                   </div>
@@ -592,7 +577,6 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       value={row.date}
                       onChange={(e) => updateRow(index, 'date', e.target.value)}
                       className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
-                      title="ম্যাচের তারিখ"
                     />
                     <input
                       type="text"
@@ -600,14 +584,13 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       onChange={(e) => updateRow(index, 'time', e.target.value)}
                       placeholder="20:00 BST"
                       className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 w-24 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
-                      title="কিক অফ সময়"
                     />
                   </div>
                 </div>
 
                 {/* Team Selection & Score Entry Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
-                  {/* Home Team Side (cols 1-4) */}
+                  {/* Home Team Side (cols 1-4) - Dropdown ordered by Standings */}
                   <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
                     <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
                       <TeamCrest teamName={row.homeTeam} size={28} />
@@ -615,16 +598,16 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
                     <div className="flex-1 min-w-0 space-y-1">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        হোম দল (Home Team)
+                        Home Team
                       </label>
                       <select
                         value={row.homeTeam}
                         onChange={(e) => updateRow(index, 'homeTeam', e.target.value)}
                         className="w-full text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
                       >
-                        {EPL_TEAMS_SORTED.map((t) => (
-                          <option key={t.id} value={t.name}>
-                            {t.name}
+                        {standingsTeams.map((t) => (
+                          <option key={t.name} value={t.name}>
+                            #{t.rank} {t.name} ({t.points} pts)
                           </option>
                         ))}
                       </select>
@@ -637,7 +620,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   {/* Score Entry Center (cols 5-7) */}
                   <div className="md:col-span-3 flex flex-col items-center justify-center space-y-1 bg-red-50/40 p-3 rounded-2xl border border-red-100">
                     <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
-                      স্কোর (Score)
+                      Score
                     </span>
 
                     <div className="flex items-center space-x-2">
@@ -661,26 +644,22 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                         className="w-14 h-12 text-center text-xl font-black font-mono bg-white border-2 border-red-200 rounded-xl text-slate-900 focus:outline-none focus:border-red-600 shadow-xs"
                       />
                     </div>
-
-                    <span className="text-[10px] text-slate-400">
-                      {isPlayed ? 'উভয় স্কোর বসানো হয়েছে' : 'স্কোর খালি রাখলে আসন্ন ম্যাচ'}
-                    </span>
                   </div>
 
-                  {/* Away Team Side (cols 8-11) */}
+                  {/* Away Team Side (cols 8-11) - Dropdown ordered by Standings */}
                   <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
                     <div className="flex-1 min-w-0 space-y-1 text-right md:text-left">
                       <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                        অ্যাওয়ে দল (Away Team)
+                        Away Team
                       </label>
                       <select
                         value={row.awayTeam}
                         onChange={(e) => updateRow(index, 'awayTeam', e.target.value)}
                         className="w-full text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
                       >
-                        {EPL_TEAMS_SORTED.map((t) => (
-                          <option key={t.id} value={t.name}>
-                            {t.name}
+                        {standingsTeams.map((t) => (
+                          <option key={t.name} value={t.name}>
+                            #{t.rank} {t.name} ({t.points} pts)
                           </option>
                         ))}
                       </select>
@@ -699,7 +678,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 {isSameTeam && (
                   <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-2.5 text-xs text-red-700 flex items-center space-x-2 font-bold">
                     <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>হোম ও অ্যাওয়ে দল একই হতে পারে না! দয়া করে ভিন্ন দল নির্বাচন করুন।</span>
+                    <span>Home and Away teams cannot be the same.</span>
                   </div>
                 )}
 
@@ -707,9 +686,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-800 flex items-center space-x-2 font-medium">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                     <span>
-                      সতর্কতা: {isHomeDoubleBooked ? row.homeTeam : ''}{' '}
-                      {isHomeDoubleBooked && isAwayDoubleBooked ? 'এবং' : ''}{' '}
-                      {isAwayDoubleBooked ? row.awayTeam : ''} দলটি এই সপ্তাহে একাধিক ম্যাচে নির্বাচিত আছে।
+                      Notice: {isHomeDoubleBooked ? row.homeTeam : ''}{' '}
+                      {isHomeDoubleBooked && isAwayDoubleBooked ? 'and' : ''}{' '}
+                      {isAwayDoubleBooked ? row.awayTeam : ''} selected in multiple matches this week.
                     </span>
                   </div>
                 )}
@@ -717,7 +696,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 {/* Card Bottom Controls */}
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <div className="text-xs text-slate-500">
-                    ভেন্যু:{' '}
+                    Venue:{' '}
                     <span className="font-semibold text-slate-700">
                       {getTeamStadium(row.homeTeam)}
                     </span>
@@ -727,10 +706,10 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                     <button
                       onClick={() => handleDeleteRow(row.id, index)}
                       className="py-1.5 px-3 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
-                      title="এই ম্যাচটি মুছে ফেলুন"
+                      title="Delete Match"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>মুছুন</span>
+                      <span>Delete</span>
                     </button>
 
                     <button
@@ -742,7 +721,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       }`}
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>সেভ করুন</span>
+                      <span>Save</span>
                     </button>
                   </div>
                 </div>
@@ -753,7 +732,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           {/* Bottom Action Footer */}
           <div className="bg-white rounded-2xl p-4 border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="text-xs text-slate-600 font-medium">
-              মোট ম্যাচ: <strong className="text-slate-900">{rows.length}টি</strong> | যেকোনো পরিবর্তন সেভ করার সাথে সাথে স্টেন্ডিং ও অ্যানালাইটিক্স স্বয়ংক্রিয়ভাবে আপডেট হবে।
+              Total: <strong className="text-slate-900">{rows.length} Matches</strong>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -762,7 +741,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ আরও ম্যাচ যোগ করুন</span>
+                <span>Add Match</span>
               </button>
 
               <button
@@ -770,7 +749,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                 className="py-2 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center space-x-1.5 shadow-md shadow-red-600/20 transition-all cursor-pointer"
               >
                 <Check className="w-4 h-4 stroke-[3]" />
-                <span>সব ম্যাচ সেভ করুন</span>
+                <span>Save All Matches</span>
               </button>
             </div>
           </div>

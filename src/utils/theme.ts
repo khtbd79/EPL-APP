@@ -3,7 +3,6 @@ import { AppLayoutTheme } from '../types';
 export interface ThemeDefinition {
   id: AppLayoutTheme;
   name: string;
-  nameBn: string;
   isDark?: boolean;
 
   // Palette hex values
@@ -37,13 +36,11 @@ export interface ThemeDefinition {
   archetype: string;
   accentColorName: string;
   description: string;
-  descriptionBn: string;
 }
 
 export const THEME_WHITE_RED: ThemeDefinition = {
   id: 'white_red',
   name: 'Classic Red & White',
-  nameBn: 'রেড ও হোয়াইট (প্রিমিয়ার লিগ ক্লাসিক)',
   isDark: false,
   primaryColor: '#dc2626',
   primaryHover: '#b91c1c',
@@ -70,14 +67,12 @@ export const THEME_WHITE_RED: ThemeDefinition = {
   activeNavBtn: 'bg-red-600 text-white shadow-md shadow-red-600/25',
   archetype: 'EPL Crimson Red',
   accentColorName: 'Crimson Red',
-  description: 'Iconic crimson red topbar with crisp white canvas and slate typography',
-  descriptionBn: 'প্রিমিয়ার লিগের ঐতিহ্যবাহী লাল রঙের হেডার ও পরিচ্ছন্ন সাদা ব্যাকগ্রাউন্ড',
+  description: 'Crimson red topbar with white canvas',
 };
 
 export const THEME_SAPPHIRE: ThemeDefinition = {
   id: 'sapphire',
   name: 'Royal Sapphire Blue',
-  nameBn: 'রয়্যাল স্যাফায়ার ব্লু',
   isDark: false,
   primaryColor: '#2563eb',
   primaryHover: '#1d4ed8',
@@ -104,14 +99,12 @@ export const THEME_SAPPHIRE: ThemeDefinition = {
   activeNavBtn: 'bg-blue-600 text-white shadow-md shadow-blue-600/25',
   archetype: 'Royal Blue',
   accentColorName: 'Sapphire Blue',
-  description: 'Deep royal sapphire blue with crisp sky highlights and modern clean panels',
-  descriptionBn: 'ম্যান সিটি ও চেলসি ব্লু ইন্সপায়ার্ড রাজকীয় উজ্জ্বল নীল থিম',
+  description: 'Deep royal sapphire blue with sky accents',
 };
 
 export const THEME_EMERALD: ThemeDefinition = {
   id: 'emerald',
   name: 'Emerald Stadium Pitch',
-  nameBn: 'এমারেল্ড পিচ গ্রিন',
   isDark: false,
   primaryColor: '#059669',
   primaryHover: '#047857',
@@ -138,14 +131,12 @@ export const THEME_EMERALD: ThemeDefinition = {
   activeNavBtn: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25',
   archetype: 'Stadium Pitch',
   accentColorName: 'Emerald Green',
-  description: 'Lush football pitch green celebrating the vibrant turf and sportsmanship',
-  descriptionBn: 'ফুটবল স্টেডিয়ামের তরতাজা সবুজ ঘাসের জীবন্ত স্পোর্টিং লুক',
+  description: 'Lush football pitch emerald green',
 };
 
 export const THEME_PURPLE: ThemeDefinition = {
   id: 'purple',
   name: 'Imperial EPL Trophy',
-  nameBn: 'ইম্পেরিয়াল পার্পল (ইপিএল ট্রফি)',
   isDark: false,
   primaryColor: '#7e22ce',
   primaryHover: '#6b21a8',
@@ -172,14 +163,12 @@ export const THEME_PURPLE: ThemeDefinition = {
   activeNavBtn: 'bg-purple-700 text-white shadow-md shadow-purple-700/25',
   archetype: 'Premier League Purple',
   accentColorName: 'Royal Violet',
-  description: 'Official Premier League trophy royal violet celebrating top-tier excellence',
-  descriptionBn: 'অফিসিয়াল প্রিমিয়ার লিগের মর্যাদাপূর্ণ পার্পল ও ভায়োলেট থিম',
+  description: 'Trophy royal purple violet',
 };
 
 export const THEME_GOLD: ThemeDefinition = {
   id: 'gold',
   name: 'Champions Gold & Amber',
-  nameBn: 'চ্যাম্পিয়ন্স গোল্ড ও অ্যাম্বার',
   isDark: false,
   primaryColor: '#d97706',
   primaryHover: '#b45309',
@@ -206,14 +195,12 @@ export const THEME_GOLD: ThemeDefinition = {
   activeNavBtn: 'bg-amber-600 text-white shadow-md shadow-amber-600/25',
   archetype: 'Champions Gold',
   accentColorName: 'Golden Amber',
-  description: 'Victorious trophy gold with warm amber prestige and championship luxury',
-  descriptionBn: 'চ্যাম্পিয়নশিপ ট্রফি ও সোনার আভা সংবলিত প্রিমিয়াম গোল্ডেন লুক',
+  description: 'Victorious gold with warm amber',
 };
 
 export const THEME_TEAL: ThemeDefinition = {
   id: 'teal',
   name: 'Teal Horizon & Cyan',
-  nameBn: 'টিল হরাইজন ও সায়ান',
   isDark: false,
   primaryColor: '#0d9488',
   primaryHover: '#0f766e',
@@ -240,14 +227,12 @@ export const THEME_TEAL: ThemeDefinition = {
   activeNavBtn: 'bg-teal-600 text-white shadow-md shadow-teal-600/25',
   archetype: 'Oceanic Teal',
   accentColorName: 'Deep Teal',
-  description: 'Modern oceanic teal with refreshing mint highlights and serene focus',
-  descriptionBn: 'সমুদ্রের গভীরতা ও সায়ানের আধুনিক মার্জিত কালার কম্বিনেশন',
+  description: 'Oceanic teal with mint highlights',
 };
 
 export const THEME_SUNSET: ThemeDefinition = {
   id: 'sunset',
   name: 'Sunset Coral Flame',
-  nameBn: 'সানসেট কোরাল ফ্লেম',
   isDark: false,
   primaryColor: '#ea580c',
   primaryHover: '#c2410c',
@@ -274,14 +259,12 @@ export const THEME_SUNSET: ThemeDefinition = {
   activeNavBtn: 'bg-orange-600 text-white shadow-md shadow-orange-600/25',
   archetype: 'Sunset Coral',
   accentColorName: 'Coral Orange',
-  description: 'Fiery sunset orange with dynamic high-energy match day excitement',
-  descriptionBn: 'উজ্জ্বল সূর্যাস্তের প্রাণবন্ত অরেঞ্জ ও কোরাল কালার প্যালেট',
+  description: 'Sunset orange with dynamic contrast',
 };
 
 export const THEME_ROSE: ThemeDefinition = {
   id: 'rose',
   name: 'Berry Rose Velvet',
-  nameBn: 'বেরি রোজ ভেলভেট',
   isDark: false,
   primaryColor: '#e11d48',
   primaryHover: '#be123c',
@@ -308,14 +291,12 @@ export const THEME_ROSE: ThemeDefinition = {
   activeNavBtn: 'bg-rose-600 text-white shadow-md shadow-rose-600/25',
   archetype: 'Velvet Rose',
   accentColorName: 'Berry Rose',
-  description: 'Rich velvet magenta berry with high elegance and eye-catching contrast',
-  descriptionBn: 'মার্জিত বেরি ও ভেলভেট ম্যাজেন্টা রোজ কালার থিম',
+  description: 'Velvet magenta rose with high elegance',
 };
 
 export const THEME_SLATE: ThemeDefinition = {
   id: 'slate',
   name: 'Steel Slate Monochrome',
-  nameBn: 'স্টিল স্লেট মনোক্রোম',
   isDark: false,
   primaryColor: '#334155',
   primaryHover: '#1e293b',
@@ -342,14 +323,12 @@ export const THEME_SLATE: ThemeDefinition = {
   activeNavBtn: 'bg-slate-800 text-white shadow-md shadow-slate-800/25',
   archetype: 'Executive Slate',
   accentColorName: 'Steel Slate',
-  description: 'Executive graphite slate with balanced contrast and professional focus',
-  descriptionBn: 'শান্ত, পরিচ্ছন্ন ও প্রফেশনাল স্টিল স্লেট মনোক্রোম লুক',
+  description: 'Monochrome slate with balanced contrast',
 };
 
 export const THEME_DARK: ThemeDefinition = {
   id: 'dark',
   name: 'Midnight Dark (Night Mode)',
-  nameBn: 'মিডনাইট ডার্ক (ডার্ক মোড)',
   isDark: true,
   primaryColor: '#38bdf8', // Electric Sky Cyan
   primaryHover: '#0ea5e9',
@@ -376,8 +355,7 @@ export const THEME_DARK: ThemeDefinition = {
   activeNavBtn: 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/25 font-black',
   archetype: 'OLED Midnight Dark',
   accentColorName: 'Electric Cyan',
-  description: 'Deep OLED dark canvas with electric cyan accents designed for nighttime focus',
-  descriptionBn: 'রাতের জন্য চোখের প্রশান্তিময় ডিপ ডার্ক মোড ও সাইবার সায়ান এক্সেন্ট',
+  description: 'Midnight dark mode with cyan accents',
 };
 
 // 10 Official Themes in order

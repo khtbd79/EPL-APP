@@ -339,9 +339,6 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
                 Desktop Mode
               </span>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
-              Use the .BAT file to open the app on PC in dedicated window mode without address bars. Double click to run immediately.
-            </p>
           </div>
         </div>
 
@@ -395,7 +392,6 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Export Data Backup (JSON)</h2>
-              <p className="text-xs text-slate-500">Save, download, or copy all match data, records, and settings</p>
             </div>
           </div>
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 hidden sm:inline-block">
@@ -410,7 +406,7 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer"
           >
             <Download className="w-4 h-4" />
-            <span>Export / Download Backup (JSON)</span>
+            <span>Export Backup (JSON)</span>
           </button>
 
           {/* 1-Click Copy All JSON */}
@@ -421,11 +417,6 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             {copiedQuick ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-600" />}
             <span>{copiedQuick ? 'Copied to Clipboard!' : '1-Click Copy Full JSON'}</span>
           </button>
-        </div>
-
-        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center space-x-2 text-[11px] text-slate-600">
-          <Smartphone className="w-3.5 h-3.5 text-red-600 shrink-0" />
-          <span>If direct mobile download is restricted, use <strong>"1-Click Copy"</strong> or <strong>"Share / Save"</strong>.</span>
         </div>
       </div>
 
@@ -438,7 +429,6 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">Import & Restore Backup</h2>
-              <p className="text-xs text-slate-500">Restore your state from a file or pasted JSON code</p>
             </div>
           </div>
 
@@ -478,7 +468,7 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
           />
           <label htmlFor="preserveThemeToggle" className="text-xs font-semibold text-slate-700 cursor-pointer select-none flex items-center space-x-1.5">
             <Palette className="w-3.5 h-3.5 text-red-600 shrink-0" />
-            <span>কারেন্ট থিম অপরিবর্তিত রাখুন (Keep Current Theme: <strong className="text-slate-900">{currentThemeConfig.name}</strong>)</span>
+            <span>Keep Current Theme: <strong className="text-slate-900">{currentThemeConfig.name}</strong></span>
           </label>
         </div>
 
