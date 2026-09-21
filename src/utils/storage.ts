@@ -31,15 +31,18 @@ export const normalizeLoadedState = (parsed: any): AppState => {
 
   const rawSettings = parsed.settings || {};
   
-  // Read saved layout theme, with fallback to dedicated storage key if available
-  let persistentTheme = rawSettings.layoutTheme;
-  if (!persistentTheme && typeof window !== 'undefined') {
+  // Prefer device's actively chosen theme stored in localStorage, or fallback to rawSettings, then DEFAULT_SETTINGS
+  let persistentTheme: any = null;
+  if (typeof window !== 'undefined') {
     try {
       const storedTheme = localStorage.getItem('btts_layout_theme');
       if (storedTheme) {
         persistentTheme = storedTheme;
       }
     } catch (_) {}
+  }
+  if (!persistentTheme) {
+    persistentTheme = rawSettings.layoutTheme;
   }
 
   const settings = { 

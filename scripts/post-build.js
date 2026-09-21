@@ -112,13 +112,9 @@ const androidWebViewPolyfill = `
           getReq.onsuccess = function() {
             var val = getReq.result;
             if (val && typeof val === 'object') {
-              if (!window.__PRELOADED_APP_STATE__) {
-                window.__PRELOADED_APP_STATE__ = val;
-              }
+              window.__PRELOADED_APP_STATE__ = val;
               try {
-                if (!localStorage.getItem('btts_app_state_v2')) {
-                  localStorage.setItem('btts_app_state_v2', JSON.stringify(val));
-                }
+                localStorage.setItem('btts_app_state_v2', JSON.stringify(val));
               } catch(e) {}
             }
           };

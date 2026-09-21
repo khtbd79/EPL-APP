@@ -58,10 +58,24 @@ export default function App() {
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  const isHydratedRef = useRef(false);
+
   const activeTheme = getThemeConfig(state.settings.layoutTheme);
 
-  // Save state to LocalStorage whenever state updates
+  // Save state to LocalStorage whenever state updates (guarded against initial empty overwrite before IndexedDB checks)
   useEffect(() => {
+    if (!isHydratedRef.current) {
+      const hasInitialData =
+        (state.matchHistory?.length || 0) +
+          (state.eplMatches?.length || 0) +
+          (state.marketRecords?.length || 0) >
+          0 || state.currentDay > 1;
+      if (hasInitialData) {
+        isHydratedRef.current = true;
+      } else {
+        return;
+      }
+    }
     saveState(state);
   }, [state]);
 
@@ -73,7 +87,7 @@ export default function App() {
   // Ensure state is flushed to LocalStorage on beforeunload, pagehide, and visibilitychange
   useEffect(() => {
     const handleFlushState = () => {
-      if (stateRef.current) {
+      if (stateRef.current && isHydratedRef.current) {
         saveState(stateRef.current);
       }
     };
@@ -99,10 +113,11 @@ export default function App() {
       if (idbState) {
         const normalized = normalizeLoadedState(idbState);
         setState((current) => {
-          // If current state is empty (e.g. 0 matches) but IndexedDB has data, restore from IndexedDB
           const currentCount = (current.matchHistory?.length || 0) + (current.eplMatches?.length || 0) + (current.marketRecords?.length || 0);
           const idbCount = (normalized.matchHistory?.length || 0) + (normalized.eplMatches?.length || 0) + (normalized.marketRecords?.length || 0);
-          if (idbCount > currentCount || (idbCount > 0 && currentCount === 0)) {
+          const idbHasData = idbCount > 0 || (normalized.currentDay && normalized.currentDay > 1) || Object.keys(normalized.preMatchNotes || {}).length > 0;
+
+          if (idbHasData && (idbCount >= currentCount || currentCount === 0)) {
             const preservedTheme = current.settings?.layoutTheme || (typeof window !== 'undefined' ? (localStorage.getItem('btts_layout_theme') as AppLayoutTheme) : null) || normalized.settings?.layoutTheme;
             return {
               ...normalized,
@@ -115,7 +130,10 @@ export default function App() {
           return current;
         });
       }
-    }).catch(() => {});
+      isHydratedRef.current = true;
+    }).catch(() => {
+      isHydratedRef.current = true;
+    });
 
     return () => {
       window.removeEventListener('beforeunload', handleFlushState);
@@ -350,6 +368,7 @@ export default function App() {
   };
 
   const handleRestoreState = (newState: AppState) => {
+    isHydratedRef.current = true;
     saveState(newState);
     setState(newState);
   };

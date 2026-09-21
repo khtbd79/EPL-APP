@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AppState } from '../types';
-import { loadState, saveState } from '../utils/storage';
+import { loadState, saveState, DEFAULT_SETTINGS } from '../utils/storage';
+import { saveStateToIndexedDB } from '../utils/indexedDbStorage';
+import { getThemeConfig } from '../utils/theme';
 import { downloadWebIntoAppZip, downloadWindowsDesktopZip, downloadStandaloneHtmlApp, downloadWindowsBatLauncher } from '../utils/htmlExporter';
 import { exportBackupJson, copyTextToClipboard, validateBackupJson } from '../utils/mobileExportHelper';
 import { BackupExportModal } from './BackupExportModal';
@@ -22,7 +24,8 @@ import {
   Copy,
   Check,
   ClipboardPaste,
-  FileText
+  FileText,
+  Palette
 } from 'lucide-react';
 
 interface BackupRestoreViewProps {
@@ -48,6 +51,10 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
   // Import tabs: file vs direct text paste
   const [importTab, setImportTab] = useState<'file' | 'paste'>('file');
   const [pastedJson, setPastedJson] = useState('');
+  const [preserveCurrentTheme, setPreserveCurrentTheme] = useState(true);
+
+  const currentTheme = state.settings?.layoutTheme || 'white_red';
+  const currentThemeConfig = getThemeConfig(currentTheme);
 
   // Export JSON file download / share
   const handleExportJSON = async () => {
@@ -72,7 +79,7 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
   };
 
   // Restore from pasted JSON text
-  const handleRestoreFromPastedJson = () => {
+  const handleRestoreFromPastedJson = async () => {
     setStatusMsg(null);
     if (!pastedJson.trim()) {
       setStatusMsg({ type: 'error', text: 'Please paste your backup JSON code into the box first.' });
@@ -86,6 +93,8 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
     }
 
     const parsed = validation.state;
+    const targetTheme = preserveCurrentTheme ? currentTheme : (parsed.settings?.layoutTheme || currentTheme);
+
     const restoredState: AppState = {
       currentDay: typeof parsed.currentDay === 'number' ? parsed.currentDay : 1,
       currentMatchweek: typeof parsed.currentMatchweek === 'number' ? parsed.currentMatchweek : 1,
@@ -94,10 +103,21 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
       preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : (state.preMatchNotes || {}),
       categoryRankings: parsed.categoryRankings && typeof parsed.categoryRankings === 'object' ? parsed.categoryRankings : (state.categoryRankings || {}),
       marketRecords: Array.isArray(parsed.marketRecords) ? parsed.marketRecords : (state.marketRecords || []),
-      settings: parsed.settings || state.settings,
+      settings: {
+        ...DEFAULT_SETTINGS,
+        ...(parsed.settings || state.settings),
+        layoutTheme: targetTheme,
+      },
     };
 
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('btts_layout_theme', targetTheme);
+      } catch (_) {}
+    }
+
     saveState(restoredState);
+    await saveStateToIndexedDB(restoredState);
     onRestoreState(restoredState);
     setPastedJson('');
     setStatusMsg({ type: 'success', text: 'Data restored successfully from pasted JSON backup.' });
@@ -110,12 +130,14 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const content = event.target?.result as string;
         const validation = validateBackupJson(content);
         if (validation.valid && validation.state) {
           const parsed = validation.state;
+          const targetTheme = preserveCurrentTheme ? currentTheme : (parsed.settings?.layoutTheme || currentTheme);
+
           const restoredState: AppState = {
             currentDay: typeof parsed.currentDay === 'number' ? parsed.currentDay : 1,
             currentMatchweek: typeof parsed.currentMatchweek === 'number' ? parsed.currentMatchweek : 1,
@@ -124,10 +146,21 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : (state.preMatchNotes || {}),
             categoryRankings: parsed.categoryRankings && typeof parsed.categoryRankings === 'object' ? parsed.categoryRankings : (state.categoryRankings || {}),
             marketRecords: Array.isArray(parsed.marketRecords) ? parsed.marketRecords : (state.marketRecords || []),
-            settings: parsed.settings || state.settings,
+            settings: {
+              ...DEFAULT_SETTINGS,
+              ...(parsed.settings || state.settings),
+              layoutTheme: targetTheme,
+            },
           };
 
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('btts_layout_theme', targetTheme);
+            } catch (_) {}
+          }
+
           saveState(restoredState);
+          await saveStateToIndexedDB(restoredState);
           onRestoreState(restoredState);
           setStatusMsg({ type: 'success', text: 'Data restored successfully from backup file.' });
         } else {
@@ -423,6 +456,21 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
               Paste JSON
             </button>
           </div>
+        </div>
+
+        {/* Theme preservation toggle */}
+        <div className="flex items-center space-x-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <input
+            type="checkbox"
+            id="preserveThemeToggle"
+            checked={preserveCurrentTheme}
+            onChange={(e) => setPreserveCurrentTheme(e.target.checked)}
+            className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer"
+          />
+          <label htmlFor="preserveThemeToggle" className="text-xs font-semibold text-slate-700 cursor-pointer select-none flex items-center space-x-1.5">
+            <Palette className="w-3.5 h-3.5 text-red-600 shrink-0" />
+            <span>কারেন্ট থিম অপরিবর্তিত রাখুন (Keep Current Theme: <strong className="text-slate-900">{currentThemeConfig.name}</strong>)</span>
+          </label>
         </div>
 
         {importTab === 'file' ? (
