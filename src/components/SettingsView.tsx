@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppState, AppSettings } from '../types';
 import { ResetDataModal } from './ResetDataModal';
 import { ConfirmActionModal, ConfirmModalConfig } from './ConfirmActionModal';
@@ -36,11 +36,17 @@ import {
   Layers,
   HelpCircle,
   Laptop,
+  Palette,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { AppLayoutTheme } from '../types';
+import { THEME_LIST, getThemeConfig } from '../utils/theme';
 
 interface SettingsViewProps {
   state: AppState;
   onUpdateSettings: (settings: AppSettings) => void;
+  onUpdateTheme?: (theme: AppLayoutTheme) => void;
   onResetCycle: () => void;
   onClearAll: () => void;
   onRestoreState?: (newState: AppState) => void;
@@ -49,6 +55,7 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   state,
   onUpdateSettings,
+  onUpdateTheme,
   onResetCycle,
   onClearAll,
   onRestoreState,
@@ -59,6 +66,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<ConfirmModalConfig | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<AppLayoutTheme>(
+    state.settings.layoutTheme || 'white_red'
+  );
+
+  useEffect(() => {
+    if (state.settings.layoutTheme) {
+      setSelectedTheme(state.settings.layoutTheme);
+    }
+  }, [state.settings.layoutTheme]);
+
+  const activeThemeConfig = getThemeConfig(selectedTheme);
+
+  const handleSelectTheme = (themeId: AppLayoutTheme) => {
+    setSelectedTheme(themeId);
+    try {
+      localStorage.setItem('btts_layout_theme', themeId);
+    } catch (_) {}
+    if (onUpdateTheme) {
+      onUpdateTheme(themeId);
+    }
+    onUpdateSettings({
+      ...state.settings,
+      layoutTheme: themeId,
+    });
+    const foundTheme = THEME_LIST.find((t) => t.id === themeId);
+    setActionSuccessMsg(`Theme "${foundTheme?.name || themeId}" applied successfully!`);
+    setTimeout(() => setActionSuccessMsg(null), 3000);
+  };
 
   // Backup & Restore states
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -177,7 +212,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdateSettings({
       ...state.settings,
       currency: 'BDT',
-      layoutTheme: 'white_red',
+      layoutTheme: selectedTheme,
     });
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 3000);
@@ -277,6 +312,193 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       )}
 
       {/* ========================================================
+          THEME SELECTION SECTION: 10 DISTINCT BEAUTIFUL THEMES
+      ======================================================== */}
+      <div className="solid-card p-6 space-y-6 bg-white border-2 border-red-200 rounded-2xl shadow-sm">
+        <div className="flex items-start sm:items-center justify-between gap-3 border-b border-red-100 pb-3 flex-wrap">
+          <div className="flex items-center space-x-2.5">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+              style={{
+                backgroundColor: activeThemeConfig.primaryLight,
+                color: activeThemeConfig.primaryColor,
+              }}
+            >
+              <Palette className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-base font-black text-slate-900 tracking-tight">
+                  Color Themes
+                </h2>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-mono">
+                  10 Themes
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select from 10 distinct color themes including Dark Mode. Click any theme to apply instantly.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-500">Active Theme:</span>
+            <span 
+              className="text-xs font-black px-3 py-1 rounded-lg border flex items-center space-x-1.5 shadow-xs"
+              style={{
+                backgroundColor: activeThemeConfig.primaryLight,
+                borderColor: activeThemeConfig.borderHex,
+                color: activeThemeConfig.primaryColor,
+              }}
+            >
+              {activeThemeConfig.isDark ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+              <span>{activeThemeConfig.name}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* 10 Themes Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+          {THEME_LIST.map((theme) => {
+            const isCurrent = selectedTheme === theme.id;
+            return (
+              <div
+                key={theme.id}
+                onClick={() => handleSelectTheme(theme.id)}
+                className={`relative rounded-2xl border-2 p-3.5 flex flex-col justify-between transition-all duration-200 cursor-pointer group text-left ${
+                  isCurrent
+                    ? 'shadow-md scale-[1.02]'
+                    : 'hover:shadow-md hover:scale-[1.01] bg-white border-slate-200 hover:border-slate-300'
+                }`}
+                style={
+                  isCurrent
+                    ? {
+                        borderColor: theme.primaryColor,
+                        backgroundColor: theme.isDark ? '#0f172a' : '#ffffff',
+                      }
+                    : {
+                        backgroundColor: theme.isDark ? '#0f172a' : '#ffffff',
+                      }
+                }
+              >
+                {/* Active Check Badge */}
+                {isCurrent && (
+                  <div 
+                    className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center space-x-1 animate-scaleUp z-10"
+                    style={{ backgroundColor: theme.primaryColor }}
+                  >
+                    <Check className="w-3 h-3 stroke-[3]" />
+                    <span>Active</span>
+                  </div>
+                )}
+
+                {/* Dark Mode Ribbon Badge */}
+                {theme.isDark && !isCurrent && (
+                  <div className="absolute -top-2 -right-1.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-slate-900 text-sky-300 border border-slate-700 shadow-sm flex items-center space-x-1 z-10">
+                    <Moon className="w-2.5 h-2.5" />
+                    <span>Dark Theme</span>
+                  </div>
+                )}
+
+                <div>
+                  {/* Visual Mini Mockup Bar */}
+                  <div 
+                    className="w-full h-10 rounded-xl overflow-hidden mb-3 border shadow-xs flex flex-col justify-between p-1.5 relative transition-transform group-hover:scale-[1.02]"
+                    style={{
+                      backgroundColor: theme.isDark ? '#090d16' : theme.primaryLight,
+                      borderColor: theme.borderHex,
+                    }}
+                  >
+                    {/* Mockup Header */}
+                    <div 
+                      className="w-full h-4 rounded-md px-2 flex items-center justify-between"
+                      style={{ backgroundColor: theme.primaryColor }}
+                    >
+                      <span className="text-[8px] font-black text-white tracking-wider">EPL 26</span>
+                      <div className="flex space-x-0.5">
+                        <div className="w-1 h-1 rounded-full bg-white/70" />
+                        <div className="w-1 h-1 rounded-full bg-white/70" />
+                      </div>
+                    </div>
+                    {/* Mockup Body Elements */}
+                    <div className="flex items-center space-x-1 px-1">
+                      <div 
+                        className="w-3 h-1.5 rounded-xs"
+                        style={{ backgroundColor: theme.primaryColor, opacity: 0.8 }}
+                      />
+                      <div 
+                        className="w-5 h-1.5 rounded-xs"
+                        style={{ backgroundColor: theme.isDark ? '#334155' : '#cbd5e1' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Theme Header: Swatch + Title */}
+                  <div className="flex items-start space-x-2.5 mb-1.5">
+                    {/* Color Swatch Circle */}
+                    <div 
+                      className="w-6 h-6 rounded-full shrink-0 shadow-xs border-2 flex items-center justify-center mt-0.5"
+                      style={{ 
+                        backgroundColor: theme.primaryColor,
+                        borderColor: theme.secondarySwatchHex || '#ffffff',
+                      }}
+                    >
+                      {theme.isDark && <Moon className="w-3 h-3 text-sky-200" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className={`text-xs font-black truncate ${theme.isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {theme.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-[10px] text-slate-500 line-clamp-2 mb-3 leading-relaxed">
+                    {theme.description}
+                  </p>
+                </div>
+
+                {/* Bottom Action Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectTheme(theme.id);
+                  }}
+                  className={`w-full py-1.5 px-2 rounded-xl text-[11px] font-black transition-all flex items-center justify-center space-x-1 cursor-pointer ${
+                    isCurrent
+                      ? 'shadow-xs'
+                      : 'hover:opacity-90'
+                  }`}
+                  style={
+                    isCurrent
+                      ? {
+                          backgroundColor: theme.primaryColor,
+                          color: theme.isDark ? '#090d16' : '#ffffff',
+                        }
+                      : {
+                          backgroundColor: theme.primaryLight,
+                          color: theme.primaryColor,
+                          border: `1px solid ${theme.borderHex}`,
+                        }
+                  }
+                >
+                  {isCurrent ? (
+                    <>
+                      <Check className="w-3 h-3 stroke-[3]" />
+                      <span>Active Theme</span>
+                    </>
+                  ) : (
+                    <span>Apply Theme</span>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ========================================================
           SECTION 1: DIRECT COMPUTER / PC INSTALLATION
       ======================================================== */}
       <div className="solid-card p-6 space-y-5 bg-white border-2 border-red-200 rounded-2xl shadow-sm">
@@ -310,25 +532,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {isInstalled ? (
             <div className="py-2.5 px-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Currently running as installed standalone app</span>
+              <span>Installed as standalone app</span>
             </div>
           ) : isInstallable ? (
             <button
               type="button"
               onClick={handlePwaInstall}
-              className="py-3 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+              className="py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
             >
               <Monitor className="w-4 h-4" />
-              <span>Install on PC (Desktop App)</span>
+              <span className="hidden sm:inline">Install on PC (Desktop App)</span>
+              <span className="sm:hidden">Install Desktop App</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleOpenInNewWindow}
-              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
             >
               <ExternalLink className="w-4 h-4" />
-              <span>Open in New Tab to Install</span>
+              <span className="hidden sm:inline">Open in New Tab to Install</span>
+              <span className="sm:hidden">Open in New Tab</span>
             </button>
           )}
 
@@ -336,20 +560,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={handleDownloadBat}
             disabled={downloadingFormat === 'bat'}
-            className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4 text-red-600" />
-            <span>{downloadingFormat === 'bat' ? 'Downloading...' : 'Download .BAT Launcher'}</span>
+            <span>{downloadingFormat === 'bat' ? 'Downloading...' : 'Download .BAT'}</span>
           </button>
 
           <button
             type="button"
             onClick={handleDownloadWindowsZip}
             disabled={downloadingFormat === 'pc'}
-            className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
           >
             <Download className="w-4 h-4 text-slate-700" />
-            <span>{downloadingFormat === 'pc' ? 'Packaging...' : 'Download PC Bundle (.ZIP)'}</span>
+            <span>{downloadingFormat === 'pc' ? 'Packaging...' : 'Download PC Bundle'}</span>
           </button>
         </div>
       </div>
@@ -365,7 +589,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900 tracking-tight">
-                Android APK Packages (WebIntoApp)
+                <span className="hidden sm:inline">Android APK Packages (WebIntoApp)</span>
+                <span className="sm:hidden">Android APK Packages</span>
               </h2>
             </div>
           </div>
@@ -374,10 +599,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             href="https://www.webintoapp.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 flex items-center gap-1.5 transition-all shadow-xs whitespace-nowrap"
           >
             <ExternalLink className="w-3.5 h-3.5 text-red-600" />
-            <span>Open WebIntoApp.com</span>
+            <span>WebIntoApp.com</span>
           </a>
         </div>
 
@@ -390,9 +615,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="p-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-left transition-all cursor-pointer flex items-center justify-between gap-2 shadow-md"
           >
             <div>
-              <div className="font-black text-xs flex items-center gap-1.5">
+              <div className="font-black text-xs flex items-center gap-1.5 whitespace-nowrap">
                 <Package className="w-4 h-4 text-white" />
-                <span>WebIntoApp Bundle (.ZIP)</span>
+                <span>WebIntoApp (.ZIP)</span>
               </div>
               <div className="text-[11px] text-red-100 mt-0.5 font-medium">100% Offline Package</div>
             </div>
@@ -406,9 +631,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-left transition-all cursor-pointer flex items-center justify-between gap-2"
           >
             <div>
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
                 <FileCode className="w-4 h-4 text-slate-700" />
-                <span>Standalone App (.HTML)</span>
+                <span>Standalone (.HTML)</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-0.5">Offline single file</div>
             </div>
@@ -422,9 +647,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-left transition-all cursor-pointer flex items-center justify-between gap-2"
           >
             <div>
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5 whitespace-nowrap">
                 <ImageIcon className="w-4 h-4 text-slate-700" />
-                <span>App Icon (512x512 PNG)</span>
+                <span>App Icon (.PNG)</span>
               </div>
               <div className="text-[10px] text-slate-500 mt-0.5">Icon Asset</div>
             </div>

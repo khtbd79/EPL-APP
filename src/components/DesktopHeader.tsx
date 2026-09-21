@@ -1,18 +1,14 @@
 import React from 'react';
 import { ActiveTab, AppState } from '../types';
+import { getThemeConfig } from '../utils/theme';
 import {
   LayoutDashboard,
   Trophy,
   Database,
   TrendingUp,
   Target,
-  Layers,
   FileText,
-  Calculator,
-  History,
-  BarChart3,
   Settings as SettingsIcon,
-  HardDriveDownload,
 } from 'lucide-react';
 
 interface DesktopHeaderProps {
@@ -25,7 +21,7 @@ interface DesktopHeaderProps {
 interface NavItem {
   id: ActiveTab;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -41,19 +37,27 @@ const NAV_ITEMS: NavItem[] = [
 
 /**
  * Top Navbar component for PC / Desktop.
- * Red navbar with large EPL 2026 brand, no extra badges or clutter,
- * and all sidebar navigation options cleanly laid out.
+ * Dynamically themed horizontal top navbar with EPL 2026 brand
+ * and all navigation options cleanly laid out.
  */
 export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
   activeTab,
   setActiveTab,
+  state,
 }) => {
+  const themeConfig = getThemeConfig(state.settings.layoutTheme);
+  const headerBg = themeConfig.isDark ? '#0d1322' : themeConfig.primaryColor;
+  const underlineBg = themeConfig.isDark ? '#38bdf8' : themeConfig.primaryDark;
+
   return (
     <header className="hidden lg:block sticky top-0 z-40 w-full no-print shadow-md">
-      {/* Red Top Navbar - Single unified horizontal bar */}
-      <div className="w-full bg-red-600 px-4 sm:px-6">
+      {/* Top Navbar - Single unified horizontal bar */}
+      <div 
+        className="w-full px-4 sm:px-6 transition-colors duration-300"
+        style={{ backgroundColor: headerBg }}
+      >
         <div className="w-full max-w-[1850px] mx-auto flex items-center justify-between h-16">
-          {/* Brand Title (EPL 2026) - Left aligned in original position, pure white text */}
+          {/* Brand Title (EPL 2026) - Left aligned, pure white text */}
           <div
             onClick={() => setActiveTab('dashboard')}
             className="flex items-center cursor-pointer select-none shrink-0 pr-4"
@@ -80,17 +84,33 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
                 (item.id === 'select_match' && activeTab === 'daily_task') ||
                 (item.id === 'report' && (activeTab === 'reports' || activeTab === 'history' || activeTab === 'saved_ledger')) ||
                 (item.id === 'settings' && activeTab === 'backup');
+
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer shrink-0 ${
                     isActive
-                      ? 'bg-white text-red-600 shadow-md font-black'
-                      : 'text-white hover:bg-red-700/80 text-white/95'
+                      ? 'shadow-md font-black'
+                      : 'text-white hover:bg-white/15 text-white/95'
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: themeConfig.isDark ? '#38bdf8' : '#ffffff',
+                          color: themeConfig.isDark ? '#090d16' : themeConfig.primaryColor,
+                        }
+                      : undefined
+                  }
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-red-600' : 'text-white'}`} />
+                  <Icon
+                    className="w-3.5 h-3.5"
+                    style={
+                      isActive
+                        ? { color: themeConfig.isDark ? '#090d16' : themeConfig.primaryColor }
+                        : { color: '#ffffff' }
+                    }
+                  />
                   <span>{item.label}</span>
                 </button>
               );
@@ -99,8 +119,11 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
         </div>
       </div>
 
-      {/* Prominent Long Underline Directly Beneath Red Top Navbar */}
-      <div className="w-full h-1 bg-red-800 shadow-xs" />
+      {/* Prominent Long Underline Directly Beneath Top Navbar */}
+      <div 
+        className="w-full h-1 shadow-xs transition-colors duration-300" 
+        style={{ backgroundColor: underlineBg }} 
+      />
     </header>
   );
 };

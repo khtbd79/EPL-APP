@@ -93,30 +93,32 @@ MATCH STATISTICS:
       {/* Header & Export Bar */}
       <div className="solid-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-red-100 rounded-2xl relative overflow-hidden no-print shadow-sm">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 flex items-center space-x-2.5 tracking-tight">
-            <BarChart3 className="w-6 h-6 text-red-600" />
-            <span>Summary & Analytics Reports</span>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2.5 tracking-tight">
+            <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 shrink-0" />
+            <span className="hidden sm:inline">Summary & Analytics Reports</span>
+            <span className="sm:hidden">Reports</span>
           </h1>
         </div>
 
         {/* Export Buttons */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={handlePrint}
-            className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center space-x-2 transition-all active:scale-[0.98] cursor-pointer shadow-xs"
+            className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center space-x-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-xs whitespace-nowrap shrink-0"
             title="Print or Save as PDF"
           >
             <Printer className="w-4 h-4 text-slate-600" />
-            <span>PDF / Print</span>
+            <span>Print</span>
           </button>
 
           <button
             onClick={handleExportTextSummary}
-            className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center space-x-2 transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+            className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center space-x-1.5 transition-all shadow-sm active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0"
             title="Download Summary File"
           >
             <Download className="w-4 h-4" />
-            <span>Export Summary</span>
+            <span className="hidden sm:inline">Export Summary</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
       </div>

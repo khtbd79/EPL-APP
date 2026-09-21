@@ -4,6 +4,18 @@
 :root {
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+
+  /* Theme variables default (Classic Red & White) */
+  --theme-primary: #dc2626;
+  --theme-primary-hover: #b91c1c;
+  --theme-primary-dark: #991b1b;
+  --theme-primary-light: #fef2f2;
+  --theme-border: #fecaca;
+  --card-bg: #ffffff;
+  --card-border: #fecaca;
+  --card-text: #0f172a;
+  --surface-bg: #faf5f5;
+  --surface-text: #0f172a;
 }
 
 /* Touch and mobile optimizations */
@@ -17,8 +29,8 @@ html, body {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--surface-bg, #faf5f5);
+  color: var(--surface-text, #0f172a);
 }
 
 button, a, select, input, textarea {
@@ -34,12 +46,15 @@ button, a, select, input, textarea {
 ::-webkit-scrollbar-track {
   background: #f8fafc;
 }
+html.dark ::-webkit-scrollbar-track {
+  background: #0b0f19;
+}
 ::-webkit-scrollbar-thumb {
-  background: #fca5a5;
+  background: var(--theme-border, #fca5a5);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ef4444;
+  background: var(--theme-primary, #dc2626);
 }
 
 /* Numeric & currency display consistency */
@@ -49,14 +64,14 @@ button, a, select, input, textarea {
 }
 
 @layer utilities {
-  /* Modern High-End Executive Glass/Solid Card - White & Red Theme */
+  /* Modern High-End Executive Glass/Solid Card */
   .solid-card, .glass-card {
-    background-color: #ffffff;
-    border: 1px solid #fecaca;
+    background-color: var(--card-bg, #ffffff);
+    border: 1px solid var(--card-border, #fecaca);
     border-radius: 18px;
-    box-shadow: 0 4px 14px -2px rgba(220, 38, 38, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
     position: relative;
-    color: #0f172a;
+    color: var(--card-text, #0f172a);
   }
   
   .solid-card-hover, .glass-card-hover {
@@ -64,103 +79,257 @@ button, a, select, input, textarea {
   }
   .solid-card-hover:hover, .glass-card-hover:hover {
     transform: translateY(-2px);
-    border-color: #f87171;
-    box-shadow: 0 10px 25px -4px rgba(220, 38, 38, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.05);
+    border-color: var(--theme-primary, #dc2626);
+    box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.05);
   }
 
-  /* Form Inputs - Clean white with red accent focus */
+  /* Form Inputs */
   .solid-input, .glass-input {
-    background-color: #ffffff;
-    border: 1px solid #fca5a5;
-    color: #0f172a;
+    background-color: var(--card-bg, #ffffff);
+    border: 1px solid var(--card-border, #fca5a5);
+    color: var(--card-text, #0f172a);
     border-radius: 12px;
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .solid-input:focus, .glass-input:focus {
     outline: none;
-    background-color: #ffffff;
-    border-color: #dc2626;
+    border-color: var(--theme-primary, #dc2626);
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
   }
 
   /* Badge */
   .solid-badge {
-    background-color: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #991b1b;
+    background-color: var(--theme-primary-light, #fee2e2);
+    border: 1px solid var(--card-border, #fecaca);
+    color: var(--theme-primary, #dc2626);
   }
 }
 
 /* =========================================================
-   WHITE & RED THEME GLOBAL RESHAPING & BLACK TEXT
+   UNIVERSAL THEME DYNAMIC ADAPTATION (Light & Dark)
    ========================================================= */
 
-/* All primary surfaces & panels become clean white with crisp red borders */
-.bg-\[\#0A0E17\], 
-.bg-\[\#080C14\], 
-.bg-\[\#0B0F19\], 
-.bg-\[\#060911\], 
-.bg-\[\#0f172a\],
-.bg-slate-950,
-.bg-slate-900,
-.bg-slate-900\/90,
-.bg-slate-900\/60,
-.bg-slate-900\/80 {
-  background-color: #ffffff !important;
-  border-color: #fecaca !important;
+/* Internal white surfaces and cards dynamically adopt theme card color */
+.bg-white:not(header *):not(.badge-form-w):not(.badge-form-d):not(.badge-form-l):not([data-form]) {
+  background-color: var(--card-bg, #ffffff) !important;
+  border-color: var(--card-border, #fecaca);
+}
+
+/* Specific card elements */
+.solid-card, 
+.glass-card,
+aside {
+  background-color: var(--card-bg, #ffffff) !important;
+  border-color: var(--card-border, #fecaca) !important;
+  color: var(--card-text, #0f172a) !important;
+}
+
+/* Secondary light panels dynamically adopt theme primary light tint */
+.bg-red-50,
+.bg-red-50\/50,
+.bg-red-50\/70,
+.bg-red-50\/80,
+.bg-red-50\/90,
+.bg-red-100 {
+  background-color: var(--theme-primary-light, #fef2f2) !important;
+  border-color: var(--theme-border, #fecaca) !important;
+}
+
+/* Red borders dynamically adopt theme border */
+.border-red-100,
+.border-red-200,
+.border-red-300 {
+  border-color: var(--theme-border, #fecaca) !important;
+}
+
+/* Red text accents dynamically adopt theme primary color */
+.text-red-600,
+.text-red-700:not([data-form="L"]) {
+  color: var(--theme-primary, #dc2626) !important;
+}
+
+/* Red buttons & badges dynamically adopt theme primary */
+button.bg-red-600:not([data-form="L"]):not(.form-badge-l),
+a.bg-red-600:not([data-form="L"]):not(.form-badge-l),
+.bg-red-600:not([data-form="L"]):not(.form-badge-l):not(header *):not(.badge-form-l) {
+  background-color: var(--theme-primary, #dc2626) !important;
+}
+
+button.hover\:bg-red-700:hover,
+a.hover\:bg-red-700:hover,
+button.bg-red-600:hover,
+a.bg-red-600:hover {
+  background-color: var(--theme-primary-hover, #b91c1c) !important;
+}
+
+/* Focus rings */
+.focus\:ring-red-400:focus,
+.focus\:ring-red-500:focus {
+  --tw-ring-color: var(--theme-primary, #dc2626) !important;
+}
+
+/* =========================================================
+   LIGHT THEMES TEXT & SURFACE STYLES (when NOT in dark mode)
+   ========================================================= */
+html:not(.dark) .bg-\[\#0A0E17\], 
+html:not(.dark) .bg-\[\#080C14\], 
+html:not(.dark) .bg-\[\#0B0F19\], 
+html:not(.dark) .bg-\[\#060911\], 
+html:not(.dark) .bg-\[\#0f172a\],
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-slate-900:not(header *):not(header),
+html:not(.dark) .bg-slate-900\/90,
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/80 {
+  background-color: var(--card-bg, #ffffff) !important;
+  border-color: var(--card-border, #fecaca) !important;
+  color: var(--card-text, #0f172a) !important;
+}
+
+html:not(.dark) .bg-white\/\[0\.03\],
+html:not(.dark) .bg-white\/\[0\.04\],
+html:not(.dark) .bg-white\/\[0\.05\],
+html:not(.dark) .bg-white\/\[0\.06\],
+html:not(.dark) .bg-white\/\[0\.08\],
+html:not(.dark) .bg-slate-950\/60,
+html:not(.dark) .bg-slate-950\/70,
+html:not(.dark) .bg-slate-950\/80 {
+  background-color: var(--theme-primary-light, #fef2f2) !important;
+  border-color: var(--card-border, #fee2e2) !important;
   color: #0f172a !important;
 }
 
-/* Secondary dark capsules & pills become soft light-red/slate pills */
-.bg-white\/\[0\.03\],
-.bg-white\/\[0\.04\],
-.bg-white\/\[0\.05\],
-.bg-white\/\[0\.06\],
-.bg-white\/\[0\.08\],
-.bg-slate-950\/60,
-.bg-slate-950\/70,
-.bg-slate-950\/80 {
-  background-color: #fef2f2 !important;
-  border-color: #fee2e2 !important;
-  color: #0f172a !important;
-}
-
-/* Text overrides: Default all text on white card backgrounds to dark slate */
-main .solid-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
-main .glass-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
-main .text-white:not(.bg-red-600 *):not(button.bg-red-600 *):not(.badge-red *):not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l),
-aside .text-white:not(.bg-red-600 *) {
+html:not(.dark) main .solid-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l):not(button.bg-red-600 *):not(button.bg-blue-600 *):not(button.bg-emerald-600 *):not(button.bg-purple-700 *):not(button.bg-amber-600 *):not(button.bg-teal-600 *):not(button.bg-orange-600 *):not(button.bg-rose-600 *):not(button.bg-slate-800 *):not(button[style*="background"] *),
+html:not(.dark) main .glass-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l):not(button[style*="background"] *):not(button.bg-red-600 *),
+html:not(.dark) main .text-white:not(header *):not(.bg-red-600 *):not(button *):not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l) {
   color: #0a0a0a !important;
 }
 
-/* Ensure Header and all elements inside red header/navbar have pure white text */
-header,
-header span:not(.text-red-600),
-header div:not(.bg-white *),
-#epl-brand-title,
-.epl-brand-title,
-.bg-red-600 .text-white,
-.bg-red-700 .text-white,
-button.bg-red-600 .text-white {
-  color: #ffffff !important;
-}
-
-main .text-slate-100,
-main .text-slate-200,
-aside .text-slate-100,
-aside .text-slate-200 {
+html:not(.dark) main .text-slate-100,
+html:not(.dark) main .text-slate-200 {
   color: #0f172a !important;
 }
 
-main .text-slate-300,
-main .text-slate-400,
-aside .text-slate-400 {
+html:not(.dark) main .text-slate-300,
+html:not(.dark) main .text-slate-400 {
   color: #334155 !important;
 }
 
-main .text-slate-500,
-aside .text-slate-500 {
+html:not(.dark) main .text-slate-500 {
   color: #475569 !important;
+}
+
+/* Light Theme Tables */
+html:not(.dark) table th {
+  background-color: var(--theme-primary-light, #fef2f2) !important;
+  color: var(--theme-primary-dark, #991b1b) !important;
+  border-bottom: 2px solid var(--theme-border, #f87171) !important;
+}
+html:not(.dark) table tr:hover td {
+  background-color: var(--theme-primary-light, #fff1f2) !important;
+}
+html:not(.dark) table td {
+  border-color: var(--card-border, #fee2e2) !important;
+  color: #0f172a !important;
+}
+
+/* =========================================================
+   DARK THEME STYLES (when in dark mode)
+   ========================================================= */
+html.dark {
+  background-color: var(--surface-bg, #080c14) !important;
+  color: #f1f5f9 !important;
+}
+html.dark body {
+  background-color: var(--surface-bg, #080c14) !important;
+  color: #f1f5f9 !important;
+}
+
+html.dark .solid-card,
+html.dark .glass-card,
+html.dark aside {
+  background-color: var(--card-bg, #0f172a) !important;
+  border-color: var(--card-border, #1e293b) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+}
+
+html.dark .bg-white,
+html.dark [class*="bg-white"]:not(header *):not(.badge-form-w):not(.badge-form-d):not(.badge-form-l):not([data-form]) {
+  background-color: var(--card-bg, #0f172a) !important;
+  color: #f1f5f9 !important;
+  border-color: var(--card-border, #1e293b) !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-red-50,
+html.dark .bg-amber-50,
+html.dark .bg-blue-50,
+html.dark .bg-emerald-50,
+html.dark .bg-purple-50,
+html.dark .bg-teal-50,
+html.dark .bg-orange-50,
+html.dark .bg-rose-50 {
+  background-color: #0b0f19 !important;
+  color: #cbd5e1 !important;
+  border-color: #1e293b !important;
+}
+
+html.dark .border-red-100,
+html.dark .border-red-200,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #1e293b !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-black,
+html.dark .text-slate-950 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #0b0f19 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+html.dark table th {
+  background-color: #0b0f19 !important;
+  color: #38bdf8 !important;
+  border-bottom: 2px solid #1e293b !important;
+}
+
+html.dark table tr:hover td {
+  background-color: #1e293b !important;
+}
+
+html.dark table td {
+  border-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* =========================================================
+   HEADER & NAVBAR UNIVERSAL STYLING
+   ========================================================= */
+header #epl-brand-title,
+header #mobile-epl-title,
+.epl-brand-title {
+  color: #ffffff !important;
 }
 
 /* Form outcome badges & indicators: W = Green, D = Orange, L = Red */
@@ -183,51 +352,6 @@ aside .text-slate-500 {
 [data-form="L"] {
   background-color: #dc2626 !important; /* Red */
   color: #ffffff !important;
-}
-
-/* Tables & Grid styling */
-table th {
-  background-color: #fef2f2 !important;
-  color: #991b1b !important;
-  border-bottom: 2px solid #f87171 !important;
-}
-table tr:hover td {
-  background-color: #fff1f2 !important;
-}
-table td {
-  border-color: #fee2e2 !important;
-  color: #0f172a !important;
-}
-
-/* Header Red preservation: keep text in red header crisp white */
-header.bg-red-600,
-header .bg-red-600 {
-  background-color: #dc2626 !important;
-}
-header.bg-red-600 *,
-header .bg-red-600 * {
-  color: #ffffff !important;
-}
-header .bg-red-600 .bg-white {
-  background-color: #ffffff !important;
-}
-header .bg-red-600 .bg-white * {
-  color: #dc2626 !important;
-}
-header .bg-red-600 .bg-red-950 {
-  background-color: #450a0a !important;
-}
-
-/* Buttons with red background should always have white text */
-.bg-red-600,
-.bg-red-700,
-.bg-red-800 {
-  color: #ffffff !important;
-}
-.bg-red-600 *,
-.bg-red-700 *,
-.bg-red-800 * {
-  color: #ffffff;
 }
 
 /* Smooth Entrance Animations */

@@ -377,7 +377,8 @@ export const DashboardTeamAnalysisCard: React.FC = () => {
           <div className="flex items-center space-x-2.5">
             <Calculator className="w-5 h-5 text-red-600" />
             <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-              Analysis Factor Scores & Overall Score (Automatic Weighted Calculation)
+              <span className="hidden sm:inline">Analysis Factor Scores & Overall Score (Automatic Weighted Calculation)</span>
+              <span className="sm:hidden">Factor Scores & Overall Rating</span>
             </h3>
           </div>
 

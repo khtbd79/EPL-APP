@@ -500,20 +500,21 @@ export const EPLMatchCenterView: React.FC<EPLMatchCenterViewProps> = ({
               <button
                 type="button"
                 onClick={handleOpenPdfReport}
-                className="py-2 px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1.5 active:scale-95 transition-all shadow-sm cursor-pointer"
+                className="py-2 px-2.5 sm:px-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs flex items-center space-x-1.5 active:scale-95 transition-all shadow-sm cursor-pointer whitespace-nowrap shrink-0"
                 title="Save EPL match results as PDF / Print"
               >
                 <Printer className="w-4 h-4 text-red-600" />
-                <span>Print PDF</span>
+                <span>Print</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => openNewMatchModal(currentWeek)}
-                className="py-2 px-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer"
+                className="py-2 px-2.5 sm:px-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md shadow-red-600/20 flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Add Match Result</span>
+                <span className="hidden sm:inline">Add Match Result</span>
+                <span className="sm:hidden">Add Result</span>
               </button>
             </div>
           </div>

@@ -23,14 +23,17 @@ export interface MatchRecord {
 
 export type AppLayoutTheme =
   | 'white_red'
-  | 'emerald'
-  | 'gold'
   | 'sapphire'
-  | 'ruby'
+  | 'emerald'
   | 'purple'
+  | 'gold'
   | 'teal'
-  | 'light'
   | 'sunset'
+  | 'rose'
+  | 'slate'
+  | 'dark'
+  | 'ruby'
+  | 'light'
   | 'glass'
   | 'stealth';
 

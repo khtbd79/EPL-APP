@@ -30,11 +30,23 @@ export const normalizeLoadedState = (parsed: any): AppState => {
   if (!parsed || typeof parsed !== 'object') return INITIAL_STATE;
 
   const rawSettings = parsed.settings || {};
+  
+  // Read saved layout theme, with fallback to dedicated storage key if available
+  let persistentTheme = rawSettings.layoutTheme;
+  if (!persistentTheme && typeof window !== 'undefined') {
+    try {
+      const storedTheme = localStorage.getItem('btts_layout_theme');
+      if (storedTheme) {
+        persistentTheme = storedTheme;
+      }
+    } catch (_) {}
+  }
+
   const settings = { 
     ...DEFAULT_SETTINGS, 
     ...rawSettings,
     currency: (!rawSettings.currency || rawSettings.currency === '$') ? 'BDT' : rawSettings.currency,
-    layoutTheme: 'white_red' as const,
+    layoutTheme: persistentTheme || DEFAULT_SETTINGS.layoutTheme || 'white_red',
   };
   
   // Normalize match history to ensure profit, loss, and netPnL are correctly assigned
@@ -144,6 +156,9 @@ export const saveState = (state: AppState): void => {
   // 1. Primary LocalStorage
   try {
     localStorage.setItem(STORAGE_KEY, serialized);
+    if (state.settings?.layoutTheme) {
+      localStorage.setItem('btts_layout_theme', state.settings.layoutTheme);
+    }
   } catch (err) {
     console.warn('Failed to save to LocalStorage:', err);
   }

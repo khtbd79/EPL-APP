@@ -132,10 +132,11 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
               <button
                 type="button"
                 onClick={() => onNavigateTab('top_teams')}
-                className="py-2.5 px-3.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
+                className="py-2 sm:py-2.5 px-3 sm:px-3.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
               >
                 <Trophy className="w-4 h-4 text-red-600" />
-                <span>Top 5 Teams Report</span>
+                <span className="hidden sm:inline">Top 5 Teams Report</span>
+                <span className="sm:hidden">Top 5 Teams</span>
               </button>
             )}
 
@@ -144,10 +145,11 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
               <button
                 type="button"
                 onClick={() => setIsPdfDropdownOpen(!isPdfDropdownOpen)}
-                className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center space-x-2 transition-all active:scale-95 cursor-pointer"
+                className="py-2 sm:py-2.5 px-3.5 sm:px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md flex items-center space-x-1.5 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
               >
                 <Printer className="w-4 h-4 text-white" />
-                <span>Save / Print PDF</span>
+                <span className="hidden sm:inline">Save / Print PDF</span>
+                <span className="sm:hidden">Print PDF</span>
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
 
@@ -191,11 +193,12 @@ export const SavedDataLedgerView: React.FC<SavedDataLedgerViewProps> = ({ state,
             {/* CSV Download Button */}
             <button
               onClick={() => downloadLedgerCsv(state)}
-              className="py-2.5 px-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
+              className="py-2 sm:py-2.5 px-3 sm:px-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs flex items-center space-x-1.5 transition-all active:scale-95 shadow-xs cursor-pointer whitespace-nowrap"
               title="Download Excel / CSV"
             >
               <FileSpreadsheet className="w-4 h-4 text-red-600" />
-              <span>Excel (CSV)</span>
+              <span className="hidden sm:inline">Excel (CSV)</span>
+              <span className="sm:hidden">CSV</span>
             </button>
           </div>
         </div>

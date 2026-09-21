@@ -84,14 +84,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleNavClick(item.id)}
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer group relative ${
               isActive
-                ? 'bg-red-600 text-white shadow-md shadow-red-600/25'
-                : 'text-slate-900 hover:text-red-700 hover:bg-red-50'
+                ? 'shadow-md'
+                : currentThemeConfig.isDark
+                ? 'text-slate-200 hover:bg-slate-800'
+                : 'text-slate-800 hover:bg-slate-100'
             }`}
+            style={
+              isActive
+                ? {
+                    backgroundColor: currentThemeConfig.primaryColor,
+                    color: currentThemeConfig.isDark ? '#090d16' : '#ffffff',
+                  }
+                : undefined
+            }
           >
             <div className="flex items-center space-x-2.5 truncate">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                isActive ? 'bg-white/20 text-white' : 'bg-red-50 border border-red-100 text-red-600 group-hover:bg-red-100 group-hover:text-red-700'
-              }`}>
+              <div 
+                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                  isActive 
+                    ? 'bg-white/20 text-white' 
+                    : currentThemeConfig.isDark
+                    ? 'bg-slate-800 text-sky-400'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+                style={isActive && currentThemeConfig.isDark ? { color: '#090d16' } : undefined}
+              >
                 {item.icon}
               </div>
               <span className="truncate tracking-tight font-bold">{item.label}</span>
@@ -99,12 +116,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center space-x-1.5 shrink-0">
               {item.badge && (
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-md font-mono ${
-                  isActive ? 'bg-white/25 text-white' : 'bg-red-100 text-red-700 border border-red-200'
+                  isActive ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-800'
                 }`}>
                   {item.badge}
                 </span>
               )}
-              {isActive && <ChevronRight className="w-3.5 h-3.5 text-white shrink-0" />}
+              {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
             </div>
           </button>
         );
@@ -118,18 +135,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isMobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="lg:hidden fixed inset-0 z-40 bg-slate-900/25 backdrop-blur-xs transition-opacity animate-fadeIn"
+          className="lg:hidden fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs transition-opacity animate-fadeIn"
         />
       )}
 
       {/* Sidebar Navigation - Hidden on PC / Desktop as options are moved to Top Navbar */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 z-50 h-screen w-72 shrink-0 bg-white border-r border-red-100 flex flex-col justify-between p-4 transform transition-transform duration-300 ease-in-out select-none shadow-xl ${
+        className={`lg:hidden fixed top-0 left-0 z-50 h-screen w-72 shrink-0 border-r flex flex-col justify-between p-4 transform transition-transform duration-300 ease-in-out select-none shadow-xl ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{
+          backgroundColor: currentThemeConfig.isDark ? '#0b0f19' : '#ffffff',
+          borderColor: currentThemeConfig.borderHex,
+        }}
       >
         {/* Top Branding */}
-        <div className="pb-3 border-b border-red-100">
+        <div className="pb-3 border-b" style={{ borderColor: currentThemeConfig.borderHex }}>
           <div className="px-1">
             <div
               onClick={() => handleNavClick('dashboard')}
@@ -137,12 +158,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="flex items-center">
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-2xl font-black text-black tracking-tight">EPL</span>
-                  <span className="text-2xl font-black text-red-600 tracking-tight">2026</span>
+                  <span className={`text-2xl font-black tracking-tight ${currentThemeConfig.isDark ? 'text-white' : 'text-slate-900'}`}>
+                    EPL
+                  </span>
+                  <span 
+                    className="text-2xl font-black tracking-tight"
+                    style={{ color: currentThemeConfig.primaryColor }}
+                  >
+                    2026
+                  </span>
                 </div>
               </div>
               {/* Long distinct line underneath EPL26 to separate it */}
-              <div className="w-full h-1 bg-red-600 mt-2.5 rounded-full shadow-sm" />
+              <div 
+                className="w-full h-1 mt-2.5 rounded-full shadow-sm"
+                style={{ backgroundColor: currentThemeConfig.primaryColor }}
+              />
             </div>
           </div>
         </div>
@@ -152,8 +183,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {renderNavSection('Navigation', mainNavGroup)}
         </div>
 
-        {/* Bottom Actions: Download App & Theme Quick Switcher */}
-        <div className="pt-3 border-t border-red-100 space-y-2">
+        {/* Bottom Actions: Download App */}
+        <div className="pt-3 border-t space-y-2" style={{ borderColor: currentThemeConfig.borderHex }}>
           <button
             type="button"
             onClick={() => {
@@ -162,15 +193,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenDownloadModal();
               }
             }}
-            className="w-full p-2.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 transition-all flex items-center justify-between group shadow-sm cursor-pointer text-red-700"
+            className="w-full p-2.5 rounded-xl border transition-all flex items-center justify-between group shadow-sm cursor-pointer"
+            style={{
+              backgroundColor: currentThemeConfig.isDark ? '#111827' : currentThemeConfig.primaryLight,
+              borderColor: currentThemeConfig.borderHex,
+              color: currentThemeConfig.isDark ? '#f1f5f9' : currentThemeConfig.primaryColor,
+            }}
           >
             <div className="flex items-center space-x-2.5 min-w-0">
-              <Download className="w-4 h-4 text-red-600 shrink-0 group-hover:scale-110 transition-transform" />
+              <Download 
+                className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" 
+                style={{ color: currentThemeConfig.primaryColor }}
+              />
               <div className="text-left truncate">
-                <div className="text-xs font-black text-black">Download App</div>
+                <div className={`text-xs font-black ${currentThemeConfig.isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Download App
+                </div>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-red-600 text-white shadow-sm">
+            <span 
+              className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg shadow-sm"
+              style={{
+                backgroundColor: currentThemeConfig.primaryColor,
+                color: currentThemeConfig.isDark ? '#090d16' : '#ffffff',
+              }}
+            >
               PWA
             </span>
           </button>

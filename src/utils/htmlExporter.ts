@@ -259,6 +259,17 @@ export async function getStandaloneHTMLContent(currentState: AppState): Promise<
   finalHtml = finalHtml.replace(scriptModuleRegex1, cleanScriptTag);
   finalHtml = finalHtml.replace(scriptModuleRegex2, cleanScriptTag);
 
+  // Strip any broken external icon/manifest links to prevent 404 in Android WebView file:///
+  finalHtml = finalHtml.replace(/<link[^>]+rel=["']manifest["'][^>]*>/gi, '');
+  finalHtml = finalHtml.replace(/<link[^>]+rel=["'](?:alternate\s+)?icon["'][^>]*>/gi, '');
+  finalHtml = finalHtml.replace(/<link[^>]+rel=["']apple-touch-icon["'][^>]*>/gi, '');
+
+  // Embed standalone inline SVG favicon and icon.png
+  const safeFaviconTag = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23dc2626'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E" />\n<link rel="icon" type="image/png" href="icon.png" />`;
+  if (finalHtml.includes('</head>')) {
+    finalHtml = finalHtml.replace('</head>', safeFaviconTag + '\n</head>');
+  }
+
   // Neutralize any import.meta or import.meta.url so classic script execution never throws SyntaxError
   finalHtml = finalHtml.replace(/\bimport\.meta\.url\b/g, "(typeof document !== 'undefined' ? (document.baseURI || window.location.href) : '')");
   finalHtml = finalHtml.replace(/\bimport\.meta\b/g, "({url: (typeof document !== 'undefined' ? (document.baseURI || window.location.href) : '')})");
@@ -838,6 +849,34 @@ Quick APK Creation Guide (WebIntoApp):
 6. Click "Create App" and download your Android APK!
 ========================================================================`;
     zip.file('README_WebIntoApp_Guide.txt', readmeText);
+
+    const banglaGuide = `========================================================================
+EPL ম্যাচ সেন্টার - WebIntoApp দিয়ে অ্যান্ড্রয়েড APK তৈরির সঠিক নিয়ম
+========================================================================
+
+কেন "Oops. Please make sure the device is connected to the internet" এরর আসে?
+------------------------------------------------------------------------
+WebIntoApp-এ সাধারণত দুটি অপশন থাকে:
+1. "Website URL" (ওয়েবসাইট লিংক দিয়ে অ্যাপ তৈরি)
+2. "All in One (HTML / ZIP File)" (অফলাইন ফাইল আপলোড করে অ্যাপ তৈরি)
+
+আপনি যদি WebIntoApp-এ ওয়েবসাইট লিংক (URL) দেন, তখন মোবাইল অ্যাপটি ইন্টারনেট সার্ভারের সাথে কানেক্ট হতে চায়। কোনো কারণে সার্ভার বন্ধ থাকলে বা কানেকশন ফেইল করলে WebIntoApp ওই "Oops" এররটি দেখায়।
+
+কিভাবে ১০০% অফলাইন ও লাইফটাইম কার্যকরী APK বানাবেন?
+------------------------------------------------------------------------
+১. https://www.webintoapp.com ওয়েবসাইটে যান।
+২. "Make App" বাটনে ক্লিক করুন।
+৩. খুবই জরুরি: "All in One" বা "HTML / ZIP File" অপশনটি সিলেক্ট করুন! ("Website URL" কখনোই সিলেক্ট করবেন না)
+৪. এই জিপ ফাইলটি (webintoapp_epl_offline_bundle.zip) সিলেক্ট করে আপলোড করুন।
+৫. App Name দিন: EPL Match Center
+৬. "Make App" বা "Create App" এ ক্লিক করুন এবং APK ডাউনলোড করে ফোনে ইন্সটল করুন!
+
+কেন এটি কোনো এরর ছাড়াই চলবে?
+- এই প্যাকেজের ভেতরে পুরো অ্যাপ, ডিজাইন, ফন্ট এবং লজিক index.html ফাইলের ভেতর এমবেড করা আছে।
+- অ্যাপটি সরাসরি মোবাইলের মেমোরি থেকে রান করবে (file:///android_asset/index.html)।
+- কোনো ইন্টারনেট বা সার্ভার লাগবে না, এবং "Oops" এরর আর কখনোই আসবে না!
+========================================================================`;
+    zip.file('WEBINTOAPP_BANGLA_GUIDE.txt', banglaGuide);
 
     const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);

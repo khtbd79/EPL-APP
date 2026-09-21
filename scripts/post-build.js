@@ -139,7 +139,12 @@ const androidWebViewPolyfill = `
 html = html.replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/gi, '');
 html = html.replace(/<link[^>]+fonts\.gstatic\.com[^>]*>/gi, '');
 
-// 4. Clean up unnecessary style attributes (like rel="stylesheet" crossorigin on <style>)
+// 4. Strip external icon, manifest, and stylesheet links to prevent 404/ERR_FILE_NOT_FOUND in Android WebView
+html = html.replace(/<link[^>]+rel=["']manifest["'][^>]*>/gi, '');
+html = html.replace(/<link[^>]+rel=["'](?:alternate\s+)?icon["'][^>]*>/gi, '');
+html = html.replace(/<link[^>]+rel=["']apple-touch-icon["'][^>]*>/gi, '');
+
+// 5. Clean up unnecessary style attributes (like rel="stylesheet" crossorigin on <style>)
 html = html.replace(/<style\s+rel=["']stylesheet["']\s+crossorigin>/gi, '<style>');
 
 // 5. Extract the main application bundle script (Vite singlefile places it in <head> or <body> with type="module")
@@ -196,7 +201,9 @@ try {
   process.exit(1);
 }
 
-// 7. Inject embedded fonts and Android polyfill into <head>
+// 7. Inject embedded fonts, inline standalone favicon, and Android polyfill into <head>
+const embeddedFavicon = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23dc2626'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E" />\n<link rel="icon" type="image/png" href="icon.png" />`;
+
 const headMatch = html.match(/<head[^>]*>/i);
 if (headMatch && headMatch.index !== undefined) {
   const insertPos = headMatch.index + headMatch[0].length;
@@ -205,11 +212,13 @@ if (headMatch && headMatch.index !== undefined) {
     '\n' +
     embeddedFontCss +
     '\n' +
+    embeddedFavicon +
+    '\n' +
     androidWebViewPolyfill +
     '\n' +
     html.substring(insertPos);
 } else {
-  html = embeddedFontCss + '\n' + androidWebViewPolyfill + '\n' + html;
+  html = embeddedFontCss + '\n' + embeddedFavicon + '\n' + androidWebViewPolyfill + '\n' + html;
 }
 
 // 8. Relocate the clean classic application <script> to the bottom of <body>, immediately before the LAST </body>
@@ -273,7 +282,14 @@ try {
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#dc2626",
-    orientation: "any"
+    orientation: "any",
+    icons: [
+      {
+        src: "icon.png",
+        sizes: "512x512",
+        type: "image/png"
+      }
+    ]
   };
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
 
@@ -299,6 +315,16 @@ try {
     zip.file('icon.png', fs.readFileSync(iconSrc));
   }
 
+  const faviconSrc = path.join(rootDir, 'public', 'favicon.ico');
+  if (fs.existsSync(faviconSrc)) {
+    zip.file('favicon.ico', fs.readFileSync(faviconSrc));
+  }
+
+  const iconSvgSrc = path.join(rootDir, 'public', 'icon.svg');
+  if (fs.existsSync(iconSvgSrc)) {
+    zip.file('icon.svg', fs.readFileSync(iconSvgSrc));
+  }
+
   const guideText = `========================================================================
 EPL PRO MATCH CENTER - WEBINTOAPP 100% OFFLINE APK GUIDE
 ========================================================================
@@ -307,7 +333,7 @@ How to create your permanent Android APK without any 'Oops' or connection error:
 
 1. Go to https://www.webintoapp.com
 2. Click "Make App"
-3. IMPORTANT: Select "HTML / ZIP File" (DO NOT choose "Website URL")
+3. IMPORTANT: Select "HTML / ZIP File" or "All in One" (DO NOT choose "Website URL")
 4. Upload this ZIP file (webintoapp_epl_offline_bundle.zip)
 5. Set App Name: "EPL Match Center"
 6. Click "Make App" / "Create App" and download your APK!
@@ -319,10 +345,47 @@ Why this works permanently:
 ========================================================================`;
   zip.file('README_WebIntoApp_Guide.txt', guideText);
 
+  const banglaGuide = `========================================================================
+EPL ম্যাচ সেন্টার - WebIntoApp দিয়ে অ্যান্ড্রয়েড APK তৈরির সঠিক নিয়ম
+========================================================================
+
+কেন "Oops. Please make sure the device is connected to the internet" এরর আসে?
+------------------------------------------------------------------------
+WebIntoApp-এ সাধারণত দুটি অপশন থাকে:
+1. "Website URL" (ওয়েবসাইট লিংক দিয়ে অ্যাপ তৈরি)
+2. "All in One (HTML / ZIP File)" (অফলাইন ফাইল আপলোড করে অ্যাপ তৈরি)
+
+আপনি যদি WebIntoApp-এ ওয়েবসাইট লিংক (URL) দেন, তখন মোবাইল অ্যাপটি ইন্টারনেট সার্ভারের সাথে কানেক্ট হতে চায়। কোনো কারণে সার্ভার বন্ধ থাকলে বা কানেকশন ফেইল করলে WebIntoApp ওই "Oops" এররটি দেখায়।
+
+কিভাবে ১০০% অফলাইন ও লাইফটাইম কার্যকরী APK বানাবেন?
+------------------------------------------------------------------------
+১. https://www.webintoapp.com ওয়েবসাইটে যান।
+২. "Make App" বাটনে ক্লিক করুন।
+৩. খুবই জরুরি: "All in One" বা "HTML / ZIP File" অপশনটি সিলেক্ট করুন! ("Website URL" কখনোই সিলেক্ট করবেন না)
+৪. এই জিপ ফাইলটি (webintoapp_epl_offline_bundle.zip) সিলেক্ট করে আপলোড করুন।
+৫. App Name দিন: EPL Match Center
+৬. "Make App" বা "Create App" এ ক্লিক করুন এবং APK ডাউনলোড করে ফোনে ইন্সটল করুন!
+
+কেন এটি কোনো এরর ছাড়াই চলবে?
+- এই প্যাকেজের ভেতরে পুরো অ্যাপ, ডিজাইন, ফন্ট এবং লজিক index.html ফাইলের ভেতর এমবেড করা আছে।
+- অ্যাপটি সরাসরি মোবাইলের মেমোরি থেকে রান করবে (file:///android_asset/index.html)।
+- কোনো ইন্টারনেট বা সার্ভার লাগবে না, এবং "Oops" এরর আর কখনোই আসবে না!
+========================================================================`;
+  zip.file('WEBINTOAPP_BANGLA_GUIDE.txt', banglaGuide);
+
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
   fs.writeFileSync(path.join(rootDir, 'dist', 'webintoapp_epl_offline_bundle.zip'), zipBuffer);
   fs.writeFileSync(path.join(rootDir, 'public', 'webintoapp_epl_offline_bundle.zip'), zipBuffer);
   console.log(`[post-build] webintoapp_epl_offline_bundle.zip generated successfully (${(zipBuffer.length / 1024).toFixed(1)} KB).`);
+
+  // Also update root epl.zip if present so that uploading epl.zip directly also works
+  try {
+    const rootEplZipPath = path.join(rootDir, 'epl.zip');
+    fs.writeFileSync(rootEplZipPath, zipBuffer);
+    console.log(`[post-build] root epl.zip updated with offline ready-to-run bundle.`);
+  } catch (eplErr) {
+    console.warn('[post-build] Could not update root epl.zip:', eplErr.message);
+  }
 } catch (zipErr) {
   console.error('[post-build] Warning: Could not generate pre-built webintoapp zip:', zipErr);
 }

@@ -226,9 +226,26 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({
               <Package className="w-4 h-4 text-red-600" />
               <span className="text-sm font-bold text-slate-900">Android APK Package (100% Offline)</span>
             </div>
-            <span className="text-[10px] font-mono text-red-700 font-bold px-2 py-0.5 rounded-full bg-red-50 border border-red-200">
-              WebIntoApp
+            <span className="text-[10px] font-mono text-emerald-700 font-bold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+              WebIntoApp Ready
             </span>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed">
+            মোবাইলে ইনস্টল করার জন্য WebIntoApp দিয়ে এররমুক্ত অফলাইন APK তৈরি করুন। কোনো ইন্টারনেট সংযোগ বা সার্ভার ছাড়াই চলবে।
+          </p>
+
+          {/* WebIntoApp Guide & Error Fix Note */}
+          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
+            <div className="font-bold flex items-center space-x-1 text-amber-800">
+              <span>⚠️ 'Oops. Please make sure the device is connected to the internet' এরর সমাধান:</span>
+            </div>
+            <div className="text-[11px] text-amber-950 space-y-1 pl-1">
+              <p>১. নিচে থেকে এই <strong>.zip</strong> ফাইলটি ডাউনলোড করুন।</p>
+              <p>২. <a href="https://www.webintoapp.com" target="_blank" rel="noopener noreferrer" className="underline font-bold text-red-600">webintoapp.com</a>-এ গিয়ে <strong>"Make App"</strong> এ ক্লিক করুন।</p>
+              <p>৩. <strong>অবশ্যই "All in One" বা "HTML / ZIP File" অপশনটি সিলেক্ট করুন</strong> (কখনোই "Website URL" দেবেন না)।</p>
+              <p>৪. এই ZIP ফাইলটি আপলোড করে APK তৈরি করুন। আপনার ফোনে কোনো এরর ছাড়াই সরাসরি অপেন হবে!</p>
+            </div>
           </div>
 
           <button

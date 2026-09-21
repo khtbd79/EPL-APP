@@ -85,11 +85,12 @@ export const MatchHistoryView: React.FC<MatchHistoryViewProps> = ({
         <div className="flex items-center space-x-3">
           <button
             onClick={handleOpenPdfReport}
-            className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center space-x-2 transition-all shadow-sm active:scale-[0.98] cursor-pointer"
+            className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center space-x-1.5 transition-all shadow-sm active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0"
             title="Save / Print Match History PDF"
           >
             <Printer className="w-4 h-4" />
-            <span>PDF Download / Print</span>
+            <span className="hidden sm:inline">Print Report</span>
+            <span className="sm:hidden">Print</span>
           </button>
 
           <div className="flex items-center space-x-2 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200 shadow-xs">

@@ -150,18 +150,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Dashboard</h1>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsPrintModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all active:scale-95"
+            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all active:scale-95 whitespace-nowrap shrink-0"
             title="Print Market Win / Loss Report"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print Report (PDF)</span>
+            <span>Print</span>
           </button>
-          <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-black font-mono border border-slate-200">
-            {totalEplMatches} Matches Synced
+          <div className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-black font-mono border border-slate-200 whitespace-nowrap shrink-0">
+            <span className="hidden sm:inline">{totalEplMatches} Matches Synced</span>
+            <span className="sm:hidden">{totalEplMatches} Synced</span>
           </div>
         </div>
       </div>
@@ -407,23 +408,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Metric Breakdown Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Won Matches</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 whitespace-nowrap">
+                  <span className="hidden sm:inline">Won Matches</span>
+                  <span className="sm:hidden">Won</span>
+                </div>
                 <div className="text-xl font-black font-mono text-emerald-800 mt-0.5">{wonCount}</div>
               </div>
 
               <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Lost Matches</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 whitespace-nowrap">
+                  <span className="hidden sm:inline">Lost Matches</span>
+                  <span className="sm:hidden">Lost</span>
+                </div>
                 <div className="text-xl font-black font-mono text-rose-800 mt-0.5">{lostCount}</div>
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Win Rate</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Win Rate</div>
                 <div className="text-xl font-black font-mono text-slate-900 mt-0.5">{winPercent.toFixed(1)}%</div>
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Net Return</div>
-                <div className={`text-xl font-black font-mono mt-0.5 ${fin.netBettingPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Net Return</div>
+                <div className={`text-xl font-black font-mono mt-0.5 whitespace-nowrap ${fin.netBettingPnL >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                   {fin.netBettingPnL >= 0 ? '+' : ''}{formatMoney(fin.netBettingPnL, currency)}
                 </div>
               </div>
@@ -476,11 +483,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="text-xs font-extrabold text-slate-900 truncate">
                         {item.homeTeam} vs {item.awayTeam}
                       </div>
-                      <div className="text-[11px] font-bold text-slate-500 flex items-center gap-2 mt-0.5">
+                      <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                         <span className="text-red-600 font-extrabold">{item.market}</span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <span>Odds: <strong className="font-mono text-slate-800">@{item.odds.toFixed(2)}</strong></span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <span>Stake: <strong className="font-mono text-slate-800">{formatMoney(item.stake, currency)}</strong></span>
                       </div>
                     </div>
@@ -529,10 +536,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-black text-slate-900 tracking-tight">
-                  Market Performance Analysis (Win & Loss)
+                <h2 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                  <span className="hidden sm:inline">Market Performance Analysis (Win & Loss)</span>
+                  <span className="sm:hidden">Market Performance</span>
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-red-100 text-red-700">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-red-100 text-red-700 shrink-0">
                   {marketBetSummaries.length} Markets
                 </span>
               </div>
@@ -541,11 +549,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Action Buttons: Filter Pills & Print */}
           <div className="flex items-center space-x-2 shrink-0">
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => setMarketFilter('all')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs transition-all cursor-pointer whitespace-nowrap ${
                   marketFilter === 'all' ? 'bg-white text-slate-900 shadow-xs font-black' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -554,7 +562,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setMarketFilter('won')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                   marketFilter === 'won' ? 'bg-emerald-600 text-white shadow-xs font-black' : 'text-emerald-700 hover:bg-emerald-50'
                 }`}
               >
@@ -564,7 +572,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => setMarketFilter('lost')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer flex items-center gap-1 ${
+                className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                   marketFilter === 'lost' ? 'bg-rose-600 text-white shadow-xs font-black' : 'text-rose-700 hover:bg-rose-50'
                 }`}
               >
@@ -576,31 +584,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setIsPrintModalOpen(true)}
-              className="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0"
+              className="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
               title="Print Market Win / Loss Table"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Print / PDF</span>
+              <span>Print</span>
             </button>
           </div>
         </div>
 
         {/* Quick KPI Overview Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-100 border-b border-slate-100 bg-white text-center">
-          <div className="p-3.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Markets</div>
+          <div className="p-3 sm:p-3.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">Total Markets</div>
             <div className="text-lg font-black font-mono text-slate-900 mt-0.5">{marketBetSummaries.length}</div>
           </div>
-          <div className="p-3.5 bg-emerald-50/40">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Profitable Markets (Net Profit)</div>
+          <div className="p-3 sm:p-3.5 bg-emerald-50/40">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 whitespace-nowrap">
+              <span className="hidden sm:inline">Profitable Markets (Net Profit)</span>
+              <span className="sm:hidden">Profitable Markets</span>
+            </div>
             <div className="text-lg font-black font-mono text-emerald-800 mt-0.5">{winningMarketsCount}</div>
           </div>
-          <div className="p-3.5 bg-rose-50/40">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700">Deficit Markets (Net Loss)</div>
+          <div className="p-3 sm:p-3.5 bg-rose-50/40">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-700 whitespace-nowrap">
+              <span className="hidden sm:inline">Deficit Markets (Net Loss)</span>
+              <span className="sm:hidden">Deficit Markets</span>
+            </div>
             <div className="text-lg font-black font-mono text-rose-800 mt-0.5">{losingMarketsCount}</div>
           </div>
-          <div className="p-3.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Settled Matches</div>
+          <div className="p-3 sm:p-3.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">
+              <span className="hidden sm:inline">Total Settled Matches</span>
+              <span className="sm:hidden">Settled Matches</span>
+            </div>
             <div className="text-lg font-black font-mono text-slate-900 mt-0.5">{totalUserBetsSettled} Matches</div>
           </div>
         </div>

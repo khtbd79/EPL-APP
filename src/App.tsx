@@ -103,7 +103,14 @@ export default function App() {
           const currentCount = (current.matchHistory?.length || 0) + (current.eplMatches?.length || 0) + (current.marketRecords?.length || 0);
           const idbCount = (normalized.matchHistory?.length || 0) + (normalized.eplMatches?.length || 0) + (normalized.marketRecords?.length || 0);
           if (idbCount > currentCount || (idbCount > 0 && currentCount === 0)) {
-            return normalized;
+            const preservedTheme = current.settings?.layoutTheme || (typeof window !== 'undefined' ? (localStorage.getItem('btts_layout_theme') as AppLayoutTheme) : null) || normalized.settings?.layoutTheme;
+            return {
+              ...normalized,
+              settings: {
+                ...normalized.settings,
+                layoutTheme: (preservedTheme as AppLayoutTheme) || 'white_red',
+              },
+            };
           }
           return current;
         });
@@ -123,11 +130,23 @@ export default function App() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [activeTab]);
 
-  // Sync theme CSS custom properties
+  // Sync theme CSS custom properties & dark mode class
   useEffect(() => {
     if (activeTheme) {
-      document.documentElement.style.setProperty('--card-bg', activeTheme.cardBgStyle);
-      document.documentElement.style.setProperty('--card-border', activeTheme.cardBorderStyle);
+      document.documentElement.setAttribute('data-theme', activeTheme.id);
+      document.documentElement.classList.toggle('dark', !!activeTheme.isDark);
+      document.documentElement.style.setProperty('--theme-primary', activeTheme.primaryColor);
+      document.documentElement.style.setProperty('--theme-primary-hover', activeTheme.primaryHover);
+      document.documentElement.style.setProperty('--theme-primary-dark', activeTheme.primaryDark);
+      document.documentElement.style.setProperty('--theme-primary-light', activeTheme.primaryLight);
+      document.documentElement.style.setProperty('--theme-border', activeTheme.borderHex);
+      document.documentElement.style.setProperty('--card-bg', activeTheme.cardBgHex);
+      document.documentElement.style.setProperty('--card-border', activeTheme.borderHex);
+      document.documentElement.style.setProperty('--card-text', activeTheme.isDark ? '#f1f5f9' : '#0f172a');
+      document.documentElement.style.setProperty('--surface-bg', activeTheme.surfaceBgHex);
+      document.documentElement.style.setProperty('--surface-text', activeTheme.isDark ? '#f1f5f9' : '#0f172a');
+      document.body.style.backgroundColor = activeTheme.surfaceBgHex;
+      document.documentElement.style.backgroundColor = activeTheme.surfaceBgHex;
     }
   }, [activeTheme]);
 
@@ -290,6 +309,11 @@ export default function App() {
   };
 
   const handleUpdateSettings = (settings: AppSettings) => {
+    if (settings?.layoutTheme && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('btts_layout_theme', settings.layoutTheme);
+      } catch (_) {}
+    }
     setState((prev) => ({
       ...prev,
       settings,
@@ -297,6 +321,11 @@ export default function App() {
   };
 
   const handleUpdateTheme = (newTheme: AppLayoutTheme) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('btts_layout_theme', newTheme);
+      } catch (_) {}
+    }
     setState((prev) => ({
       ...prev,
       settings: {
@@ -326,7 +355,12 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen ${activeTheme.bgClass} ${activeTheme.textClass} flex flex-col font-sans transition-colors duration-300 w-full overflow-x-hidden relative`}>
+    <div 
+      className={`min-h-screen ${activeTheme.textClass} flex flex-col font-sans transition-colors duration-300 w-full overflow-x-hidden relative`}
+      style={{
+        backgroundColor: activeTheme.surfaceBgHex,
+      }}
+    >
       {/* Mobile Drawer (Hidden on PC) */}
       <Sidebar
         activeTab={activeTab}
@@ -423,6 +457,7 @@ export default function App() {
             <SettingsView
               state={state}
               onUpdateSettings={handleUpdateSettings}
+              onUpdateTheme={handleUpdateTheme}
               onResetCycle={handleResetCycle}
               onClearAll={handleClearAll}
               onRestoreState={handleRestoreState}
