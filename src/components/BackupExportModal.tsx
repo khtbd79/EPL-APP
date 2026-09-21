@@ -121,7 +121,6 @@ export const BackupExportModal: React.FC<BackupExportModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900">Export Backup (Mobile & PC)</h2>
-              <p className="text-xs text-slate-500">Save, share, or copy your app data</p>
             </div>
           </div>
           <button
@@ -139,17 +138,6 @@ export const BackupExportModal: React.FC<BackupExportModalProps> = ({
             <span>{exportNotice}</span>
           </div>
         )}
-
-        {/* Mobile Recommended Info */}
-        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
-          <div className="flex items-center space-x-1.5 font-bold text-red-600">
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>Mobile APK / WebView Compatibility</span>
-          </div>
-          <p className="text-[11px] text-slate-600 leading-relaxed">
-            If your Android app blocks standard browser downloads, use <strong>"Share via Android / Save to Drive"</strong> or <strong>"Copy Full JSON"</strong>. Both work 100% reliably inside WebIntoApp and APKs.
-          </p>
-        </div>
 
         {/* Action Buttons Grid */}
         <div className="grid grid-cols-1 gap-2.5 pt-1">

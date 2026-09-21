@@ -357,32 +357,6 @@ How to create your permanent Android APK without any 'Oops' or connection error:
 ========================================================================`;
   zip.file('README_WebIntoApp_Guide.txt', guideText);
 
-  const banglaGuide = `========================================================================
-EPL ম্যাচ সেন্টার - WebIntoApp ১০০% সম্পূর্ণ অফলাইন APK গাইড
-========================================================================
-
-আমরা কোড অডিট করে মোবাইলে "Oops" আসার কারণ সমাধান করেছি:
-
-১. কেন আগে জিপ দিয়ে বানালেও "Oops" আসত?
-   - কোডের ভেতরে আগে একটি ব্যাকগ্রাউন্ড সার্ভিস-ওয়ার্কার (/sw.js) এবং এক্সটার্নাল লিংক চালু ছিল।
-   - মোবাইল অ্যাপ ওপেন করার পর WebView ব্যাকগ্রাউন্ডে সেই ফাইলটি খোঁজার চেষ্টা করত।
-   - অফলাইনে থাকায় রিকোয়েস্ট ফেইল হত এবং WebIntoApp "Oops. Please make sure the device is connected to the internet" পেজ প্রদর্শন করত।
-   - এখন সেই সার্ভিস-ওয়ার্কার ও যেকোনো নেটওয়ার্ক রিকোয়েস্ট কোড থেকে সম্পূর্ণভাবে বাদ দেওয়া হয়েছে!
-
-২. কোডের বর্তমান অবস্থা (১০০% অফলাইন ভেরিফাইড):
-   - কোনো ইন্টারনেট রিকোয়েস্ট বা সার্ভার কল নেই।
-   - ২০টি ক্লাবের লোগো এবং সকল ফন্ট index.html এর ভেতরে ইনলাইন করা।
-
-৩. WebIntoApp দিয়ে APK তৈরির সঠিক ধাপ:
-   ১. https://www.webintoapp.com এ যান।
-   ২. "Make App" বাটনে ক্লিক করুন।
-   ৩. "Upload HTML / ZIP File" অপশন বেছে এই জিপ ফাইলটি আপলোড করুন।
-   ৪. App Name দিন: EPL Match Center
-   ৫. গুরুত্বপূর্ণ: WebIntoApp এর সেটিংসে "Internet Connection Check" বন্ধ (OFF / Disabled) রাখবেন।
-   ৬. "Create App" এ ক্লিক করে APK ডাউনলোড করুন এবং ফোনে চালান। এখন ইন্টারনেট ছাড়াও সরাসরি অ্যাপ চলবে!
-========================================================================`;
-  zip.file('WEBINTOAPP_BANGLA_GUIDE.txt', banglaGuide);
-
   const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
   fs.writeFileSync(path.join(rootDir, 'dist', 'webintoapp_epl_offline_bundle.zip'), zipBuffer);
   fs.writeFileSync(path.join(rootDir, 'public', 'webintoapp_epl_offline_bundle.zip'), zipBuffer);

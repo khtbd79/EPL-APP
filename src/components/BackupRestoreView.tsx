@@ -237,7 +237,7 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             <CheckCircle2 className="w-4 h-4" />
             <span>App is installed and running in standalone mode</span>
           </div>
-        ) : isInstallable ? (
+        ) : (
           <button
             onClick={async () => {
               const ok = await install();
@@ -248,19 +248,6 @@ export const BackupRestoreView: React.FC<BackupRestoreViewProps> = ({
             <Smartphone className="w-4 h-4" />
             <span>Install App on Device</span>
           </button>
-        ) : isIOS ? (
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
-            <div className="text-amber-800 font-bold flex items-center space-x-1.5">
-              <Share2 className="w-3.5 h-3.5" />
-              <span>iOS Installation</span>
-            </div>
-            <div className="font-mono text-[11px] text-amber-900">Tap Share icon in Safari and select 'Add to Home Screen'</div>
-          </div>
-        ) : (
-          <div className="py-2.5 px-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium flex items-center space-x-2">
-            <Info className="w-4 h-4 text-red-600 shrink-0" />
-            <span>Install via browser menu 'Install App' or 'Add to Home Screen'</span>
-          </div>
         )}
       </div>
 

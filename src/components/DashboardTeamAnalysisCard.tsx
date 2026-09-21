@@ -235,9 +235,6 @@ export const DashboardTeamAnalysisCard: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             Match Analysis & Market Selection
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Select home and away teams to evaluate 8 factor scores and 5 target markets
-          </p>
         </div>
 
         {/* Live Match Matchup Selection (Home vs Away) */}

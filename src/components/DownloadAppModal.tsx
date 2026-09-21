@@ -172,7 +172,7 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({
               <CheckCircle2 className="w-4 h-4" />
               <span>App is running in standalone mode</span>
             </div>
-          ) : isInstallable ? (
+          ) : (
             <button
               onClick={handlePwaInstall}
               className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer"
@@ -180,22 +180,6 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({
               <Smartphone className="w-4 h-4" />
               <span>Install to Home Screen</span>
             </button>
-          ) : isIOS ? (
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1.5">
-              <div className="flex items-center space-x-1.5 text-amber-800 font-bold">
-                <Share2 className="w-3.5 h-3.5" />
-                <span>iOS Installation</span>
-              </div>
-              <div className="font-mono text-[11px] text-amber-900">
-                1. Tap Share icon in Safari<br />
-                2. Tap 'Add to Home Screen'
-              </div>
-            </div>
-          ) : (
-            <div className="p-2.5 rounded-lg bg-slate-100 text-[11px] text-slate-600 font-mono flex items-center space-x-2">
-              <Globe className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>Use browser menu to Add to Home Screen</span>
-            </div>
           )}
         </div>
 
