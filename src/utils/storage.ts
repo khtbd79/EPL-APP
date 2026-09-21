@@ -1,6 +1,6 @@
 import { AppState, AppSettings, MatchRecord, EPLMatchEvent } from '../types';
 import { saveStateToIndexedDB, clearIndexedDBState } from './indexedDbStorage';
-import { normalizeTeamName } from './teamData';
+import { normalizeTeamName, sanitizeAndDeduplicateMatches } from './teamData';
 
 const STORAGE_KEY = 'btts_app_state_v2';
 const BACKUP_STORAGE_KEY = 'btts_app_backup_state_v2';
@@ -80,11 +80,7 @@ export const normalizeLoadedState = (parsed: any): AppState => {
     currentDay: typeof parsed.currentDay === 'number' && parsed.currentDay >= 1 ? parsed.currentDay : 1,
     currentMatchweek: typeof parsed.currentMatchweek === 'number' ? parsed.currentMatchweek : (settings.activeMatchweek || 1),
     matchHistory: normalizedHistory,
-    eplMatches: (Array.isArray(parsed.eplMatches) ? parsed.eplMatches : []).map((m: any) => ({
-      ...m,
-      homeTeam: normalizeTeamName(m.homeTeam) || m.homeTeam,
-      awayTeam: normalizeTeamName(m.awayTeam) || m.awayTeam,
-    })),
+    eplMatches: sanitizeAndDeduplicateMatches(Array.isArray(parsed.eplMatches) ? parsed.eplMatches : []),
     marketRecords: Array.isArray(parsed.marketRecords) ? parsed.marketRecords : [],
     preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : {},
     categoryRankings: parsed.categoryRankings && typeof parsed.categoryRankings === 'object' ? parsed.categoryRankings : {},

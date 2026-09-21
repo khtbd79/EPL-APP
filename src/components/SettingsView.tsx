@@ -103,7 +103,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [importStatus, setImportStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const getCleanAppUrl = () => {
-    if (typeof window === 'undefined') return 'https://ais-pre-bzvwluwzxondijtlhc6xyp-762222021850.asia-southeast1.run.app';
+    if (typeof window === 'undefined') return '';
     return window.location.href;
   };
 

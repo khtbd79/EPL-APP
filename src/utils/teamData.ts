@@ -561,6 +561,66 @@ export interface TeamStandingData {
   form: ('W' | 'D' | 'L')[];
 }
 
+/**
+ * Sanitizes and deduplicates EPL matches.
+ * Rules:
+ * 1. Normalizes all team names to official EPL team names.
+ * 2. Filters out any matches where homeTeam == awayTeam.
+ * 3. CRITICAL: In any given Matchweek, each team can play AT MOST ONE match!
+ *    If duplicate records exist for the same matchweek (e.g. from previous bugs or multiple edits),
+ *    the latest/most complete record is preserved and duplicates are discarded.
+ */
+export const sanitizeAndDeduplicateMatches = (matches: EPLMatchEvent[]): EPLMatchEvent[] => {
+  if (!Array.isArray(matches)) return [];
+
+  const normalized: EPLMatchEvent[] = matches
+    .filter((m) => m && m.homeTeam && m.awayTeam)
+    .map((m) => ({
+      ...m,
+      homeTeam: normalizeTeamName(m.homeTeam),
+      awayTeam: normalizeTeamName(m.awayTeam),
+      matchweek: Number(m.matchweek) || 1,
+    }))
+    .filter((m) => m.homeTeam.toLowerCase().trim() !== m.awayTeam.toLowerCase().trim());
+
+  // Sort by date / createdAt descending so the latest update takes precedence
+  const sorted = [...normalized].sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.date || 0).getTime();
+    const timeB = new Date(b.createdAt || b.date || 0).getTime();
+    return timeB - timeA;
+  });
+
+  // Track teams seen per matchweek: week -> Set<teamNameLower>
+  const weekTeamsSeen = new Map<number, Set<string>>();
+  const deduped: EPLMatchEvent[] = [];
+
+  for (const match of sorted) {
+    const mw = match.matchweek || 1;
+    if (!weekTeamsSeen.has(mw)) {
+      weekTeamsSeen.set(mw, new Set());
+    }
+    const teamsInWeek = weekTeamsSeen.get(mw)!;
+    const hKey = match.homeTeam.toLowerCase().trim();
+    const aKey = match.awayTeam.toLowerCase().trim();
+
+    // If either team has already been recorded in this matchweek, skip duplicate/conflicting entry
+    if (teamsInWeek.has(hKey) || teamsInWeek.has(aKey)) {
+      continue;
+    }
+
+    teamsInWeek.add(hKey);
+    teamsInWeek.add(aKey);
+    deduped.push(match);
+  }
+
+  // Sort back chronologically by matchweek, then date
+  return deduped.sort((a, b) => {
+    const mwDiff = (a.matchweek || 1) - (b.matchweek || 1);
+    if (mwDiff !== 0) return mwDiff;
+    return new Date(a.date || 0).getTime() - new Date(b.date || 0).getTime();
+  });
+};
+
 export const calculateEPLStandings = (matches: EPLMatchEvent[]): TeamStandingData[] => {
   const standingsMap: Record<string, TeamStandingData> = {};
 
@@ -597,8 +657,11 @@ export const calculateEPLStandings = (matches: EPLMatchEvent[]): TeamStandingDat
     };
   });
 
+  // Always sanitize and deduplicate to ensure each team plays at most 1 match per matchweek!
+  const cleanMatches = sanitizeAndDeduplicateMatches(matches);
+
   // Sort matches chronologically to track form correctly
-  const sortedMatches = [...matches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const sortedMatches = [...cleanMatches].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   sortedMatches.forEach((m) => {
     const homeTeamKey = normalizeTeamName(m.homeTeam);

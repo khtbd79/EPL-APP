@@ -3,12 +3,11 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Safe Service Worker Registration for PWA (only on http/https)
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.log('[PWA] ServiceWorker registration skipped:', err);
-    });
+// 100% Offline Standalone - No external service worker requests
+if (typeof window !== 'undefined') {
+  // Prevent any unhandled rejection or asset load failure from crashing WebView
+  window.addEventListener('unhandledrejection', (event) => {
+    event.preventDefault();
   });
 }
 

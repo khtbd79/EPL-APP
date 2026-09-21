@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking } from './types';
 import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState } from './utils/storage';
-import { normalizeTeamName } from './utils/teamData';
+import { normalizeTeamName, sanitizeAndDeduplicateMatches } from './utils/teamData';
 import { loadStateFromIndexedDB } from './utils/indexedDbStorage';
 import { getThemeConfig } from './utils/theme';
 import { Sidebar } from './components/Sidebar';
@@ -246,20 +246,13 @@ export default function App() {
         ...match,
         homeTeam: normalizeTeamName(match.homeTeam),
         awayTeam: normalizeTeamName(match.awayTeam),
+        createdAt: match.createdAt || new Date().toISOString(),
       };
       const matches = prev.eplMatches || [];
-      const index = matches.findIndex(
-        (m) =>
-          m.id === normalizedMatch.id ||
-          (m.matchweek === normalizedMatch.matchweek &&
-            normalizeTeamName(m.homeTeam).toLowerCase() === normalizeTeamName(normalizedMatch.homeTeam).toLowerCase() &&
-            normalizeTeamName(m.awayTeam).toLowerCase() === normalizeTeamName(normalizedMatch.awayTeam).toLowerCase())
-      );
-
-      const updatedMatches =
-        index >= 0
-          ? matches.map((m, i) => (i === index ? { ...m, ...normalizedMatch } : m))
-          : [normalizedMatch, ...matches];
+      const updatedMatches = sanitizeAndDeduplicateMatches([
+        normalizedMatch,
+        ...matches.filter((m) => m.id !== normalizedMatch.id),
+      ]);
 
       return {
         ...prev,
@@ -281,6 +274,30 @@ export default function App() {
         eplMatches: matches.filter((m) => m.id !== id),
       };
     });
+  };
+
+  const handleBatchSaveEplMatches = (matchesToSave: EPLMatchEvent[]) => {
+    setState((prev) => {
+      const existing = prev.eplMatches || [];
+      const incomingIds = new Set(matchesToSave.map((m) => m.id));
+      const remainingExisting = existing.filter((m) => !incomingIds.has(m.id));
+      const updatedMatches = sanitizeAndDeduplicateMatches([
+        ...matchesToSave,
+        ...remainingExisting,
+      ]);
+
+      return {
+        ...prev,
+        eplMatches: updatedMatches,
+      };
+    });
+  };
+
+  const handleClearMatchweekMatches = (matchweek: number) => {
+    setState((prev) => ({
+      ...prev,
+      eplMatches: (prev.eplMatches || []).filter((m) => m.matchweek !== matchweek),
+    }));
   };
 
   const handleSetMatchweek = (matchweek: number) => {
@@ -436,6 +453,8 @@ export default function App() {
               state={state}
               onSaveEplMatch={handleSaveEplMatch}
               onDeleteEplMatch={handleDeleteEplMatch}
+              onBatchSaveEplMatches={handleBatchSaveEplMatches}
+              onClearMatchweekMatches={handleClearMatchweekMatches}
               onNavigateTab={setActiveTab}
             />
           )}

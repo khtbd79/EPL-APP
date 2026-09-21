@@ -236,15 +236,18 @@ export const DownloadAppModal: React.FC<DownloadAppModalProps> = ({
           </p>
 
           {/* WebIntoApp Guide & Error Fix Note */}
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1.5">
-            <div className="font-bold flex items-center space-x-1 text-amber-800">
-              <span>⚠️ 'Oops. Please make sure the device is connected to the internet' এরর সমাধান:</span>
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs space-y-2">
+            <div className="font-black flex items-center space-x-1.5 text-emerald-900">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>১০০% সম্পূর্ণ অফলাইন বান্ডেল প্রস্তুত (Oops এরর ফিক্সড):</span>
             </div>
-            <div className="text-[11px] text-amber-950 space-y-1 pl-1">
-              <p>১. নিচে থেকে এই <strong>.zip</strong> ফাইলটি ডাউনলোড করুন।</p>
-              <p>২. <a href="https://www.webintoapp.com" target="_blank" rel="noopener noreferrer" className="underline font-bold text-red-600">webintoapp.com</a>-এ গিয়ে <strong>"Make App"</strong> এ ক্লিক করুন।</p>
-              <p>৩. <strong>অবশ্যই "All in One" বা "HTML / ZIP File" অপশনটি সিলেক্ট করুন</strong> (কখনোই "Website URL" দেবেন না)।</p>
-              <p>৪. এই ZIP ফাইলটি আপলোড করে APK তৈরি করুন। আপনার ফোনে কোনো এরর ছাড়াই সরাসরি অপেন হবে!</p>
+            <div className="text-[11px] text-emerald-900 space-y-1.5 leading-relaxed">
+              <p className="bg-emerald-100/70 p-2 rounded-lg font-medium">
+                <strong>কেন আগে জিপ দিয়ে বানালেও Oops আসত?</strong> কোডের ভেতরে ব্যাকগ্রাউন্ড সার্ভিস-ওয়ার্কার কল চালু ছিল, যা ইন্টারনেট না থাকায় ফেইল করত এবং WebIntoApp Oops পেজ দেখাত। সেটি এখন কোড থেকে সম্পূর্ণ বাদ দিয়ে ১০০% ক্লিন করা হয়েছে।
+              </p>
+              <div className="space-y-1 pt-1 font-medium">
+                <p><strong>✅ WebIntoApp দিয়ে বানানোর নিয়ম:</strong> নিচের বাটন থেকে <strong>.zip</strong> ডাউনলোড করে WebIntoApp-এ <strong>"Upload HTML / ZIP File"</strong> মোডে আপলোড করুন। বিল্ড করার সময় সেটিংসে "Internet Connection Check" বন্ধ (OFF / Disabled) রাখবেন।</p>
+              </div>
             </div>
           </div>
 

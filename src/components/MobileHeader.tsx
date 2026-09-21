@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActiveTab, AppState } from '../types';
 import { getThemeConfig } from '../utils/theme';
-import { Menu } from 'lucide-react';
+import { Menu, Smartphone } from 'lucide-react';
 
 interface MobileHeaderProps {
   setActiveTab: (tab: ActiveTab) => void;
@@ -14,6 +14,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   setActiveTab,
   state,
   onOpenSidebar,
+  onOpenDownloadModal,
 }) => {
   const themeConfig = getThemeConfig(state.settings.layoutTheme);
   const headerBg = themeConfig.isDark ? '#0d1322' : themeConfig.primaryColor;
@@ -52,8 +53,19 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
           </div>
         </div>
 
-        {/* Right Section: Empty / Clean */}
-        <div className="flex items-center space-x-2" />
+        {/* Right Section: Mobile App / Oops Fix Button */}
+        <div className="flex items-center space-x-2">
+          {onOpenDownloadModal && (
+            <button
+              onClick={onOpenDownloadModal}
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-bold border border-white/30 active:scale-95 transition-all cursor-pointer"
+              title="মোবাইলে অ্যাপ ইনস্টল ও Oops এরর সমাধান"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>অ্যাপ ইনস্টল</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Long Underline Beneath Top Navbar */}
