@@ -417,10 +417,10 @@ export default function App() {
   };
 
   const handleClearAll = () => {
-    clearAllData();
-    const fresh = loadState();
+    const fresh = clearAllData();
     stateRef.current = fresh;
     setState(fresh);
+    saveState(fresh);
     setActiveTab('dashboard');
   };
 

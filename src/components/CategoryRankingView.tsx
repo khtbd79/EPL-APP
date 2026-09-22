@@ -6,6 +6,7 @@ import {
   TierLevel
 } from '../types';
 import { ALL_EPL_20_TEAMS, EPLTeamInfo, normalizeTeamName } from '../utils/teamData';
+import { ConfirmActionModal, ConfirmModalConfig } from './ConfirmActionModal';
 import {
   ListOrdered,
   Save,
@@ -134,6 +135,7 @@ export const CategoryRankingView: React.FC<CategoryRankingViewProps> = ({
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
 
   // Load saved ranking whenever selectedMatchweek changes
   useEffect(() => {
@@ -301,19 +303,26 @@ export const CategoryRankingView: React.FC<CategoryRankingViewProps> = ({
 
   // Reset/Clear team selections
   const handleResetRankings = () => {
-    if (window.confirm(`Are you sure you want to reset all 20 rankings for Matchweek ${selectedMatchweek}?`)) {
-      setItems(
-        Array.from({ length: 20 }, (_, idx) => ({
-          position: idx + 1,
-          teamName: '',
-          tier: getDefaultTierForPosition(idx + 1),
-          notes: '',
-        }))
-      );
-      setOverallNotes('');
-      setHasUnsavedChanges(true);
-      showToast(`Matchweek ${selectedMatchweek} Rankings Cleared`);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset Rankings',
+      message: `Are you sure you want to reset all 20 rankings for Matchweek ${selectedMatchweek}?`,
+      confirmLabel: 'Reset Rankings',
+      variant: 'danger',
+      onConfirm: () => {
+        setItems(
+          Array.from({ length: 20 }, (_, idx) => ({
+            position: idx + 1,
+            teamName: '',
+            tier: getDefaultTierForPosition(idx + 1),
+            notes: '',
+          }))
+        );
+        setOverallNotes('');
+        setHasUnsavedChanges(true);
+        showToast(`Matchweek ${selectedMatchweek} Rankings Cleared`);
+      },
+    });
   };
 
   // Show Toast
@@ -1382,6 +1391,11 @@ export const CategoryRankingView: React.FC<CategoryRankingViewProps> = ({
           </button>
         </div>
       </div>
+
+      <ConfirmActionModal
+        config={confirmModal}
+        onClose={() => setConfirmModal(null)}
+      />
     </div>
   );
 };

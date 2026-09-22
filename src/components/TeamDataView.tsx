@@ -3,6 +3,7 @@ import { AppState, EPLMatchEvent, ActiveTab } from '../types';
 import { ALL_EPL_20_TEAMS, normalizeTeamName, calculateEPLStandings } from '../utils/teamData';
 import { getStoredDraft, setStoredDraft } from '../utils/storage';
 import { TeamCrest } from './TeamCrest';
+import { ConfirmActionModal, ConfirmModalConfig } from './ConfirmActionModal';
 import {
   Trophy,
   Calendar,
@@ -19,7 +20,9 @@ import {
   ArrowRight,
   Check,
   Clock,
-  Sparkles
+  Sparkles,
+  CheckCheck,
+  Copy
 } from 'lucide-react';
 
 // Helper to auto-lookup venue for the selected home team
@@ -97,6 +100,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
   // Working local matches for the active matchweek to allow smooth editing
   const [rows, setRows] = useState<EditableMatchRow[]>([]);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
 
   // Sync rows whenever selectedWeek changes or new matches arrive in state, respecting in-progress drafts
   useEffect(() => {
@@ -133,6 +137,84 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       setRows([]);
     }
   }, [weekMatchesFromState, selectedWeek]);
+
+  // Master Date & Time for the active matchweek to easily sync across all 10 slots
+  const [masterDate, setMasterDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const [masterTime, setMasterTime] = useState<string>('20:00 BST');
+
+  // Keep masterDate & masterTime in sync with the first row when switching matchweeks
+  useEffect(() => {
+    if (rows.length > 0 && rows[0].date) {
+      setMasterDate(rows[0].date);
+    }
+    if (rows.length > 0 && rows[0].time) {
+      setMasterTime(rows[0].time);
+    }
+  }, [selectedWeek]);
+
+  // Update Master Date and propagate to all match rows in this matchweek
+  const handleMasterDateChange = (newDate: string) => {
+    setMasterDate(newDate);
+    if (rows.length > 0) {
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          date: newDate,
+          isDirty: true,
+        }))
+      );
+      setToastMessage(`Date set to ${newDate} for all ${rows.length} matches.`);
+    }
+  };
+
+  // Update Master Time and propagate to all match rows in this matchweek
+  const handleMasterTimeChange = (newTime: string) => {
+    setMasterTime(newTime);
+    if (rows.length > 0) {
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          time: newTime,
+          isDirty: true,
+        }))
+      );
+      setToastMessage(`Time set to ${newTime} for all ${rows.length} matches.`);
+    }
+  };
+
+  // Explicitly apply master date and time to all matches in this week
+  const handleApplyMasterDateTimeToAll = (customDate = masterDate, customTime = masterTime) => {
+    if (rows.length === 0) {
+      setToastMessage('No match slots available. Click "10 Slots" first.');
+      return;
+    }
+    setRows((prev) =>
+      prev.map((r) => ({
+        ...r,
+        date: customDate,
+        time: customTime,
+        isDirty: true,
+      }))
+    );
+    setToastMessage(`Applied ${customDate} ${customTime} to all ${rows.length} matches.`);
+  };
+
+  // Copy a specific match's date and time to all other matches in this matchweek
+  const copyDateTimeToAllMatches = (sourceDate: string, sourceTime: string, sourceIndex: number) => {
+    setMasterDate(sourceDate);
+    setMasterTime(sourceTime);
+    setRows((prev) =>
+      prev.map((r) => ({
+        ...r,
+        date: sourceDate,
+        time: sourceTime,
+        isDirty: true,
+      }))
+    );
+    setToastMessage(`Match #${sourceIndex + 1}'s Date & Time copied to all 10 matches.`);
+  };
 
   // When rows have unsaved changes, auto-save to draft key so a refresh or restart never loses typing
   useEffect(() => {
@@ -213,8 +295,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       awayTeam: defaultAway,
       homeScore: '',
       awayScore: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '20:00 BST',
+      date: masterDate || new Date().toISOString().split('T')[0],
+      time: masterTime || '20:00 BST',
       status: 'UPCOMING',
       isDirty: true,
     };
@@ -223,19 +305,10 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     setToastMessage('Match slot added.');
   };
 
-  // Generate 10 empty match slots for this matchweek matching standings pairs
-  const handleGenerate10Slots = () => {
-    if (
-      rows.length > 0 &&
-      !window.confirm(
-        `Replace existing matches in Matchweek ${selectedWeek} with 10 slots?`
-      )
-    ) {
-      return;
-    }
-
+  const generate10SlotsInternal = () => {
     const new10Rows: EditableMatchRow[] = [];
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = masterDate || new Date().toISOString().split('T')[0];
+    const timeStr = masterTime || '20:00 BST';
 
     for (let i = 0; i < 10; i++) {
       const homeTeam = standingsTeams[i * 2]?.name || 'Arsenal';
@@ -249,14 +322,30 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
         homeScore: '',
         awayScore: '',
         date: dateStr,
-        time: '20:00 BST',
+        time: timeStr,
         status: 'UPCOMING',
         isDirty: true,
       });
     }
 
     setRows(new10Rows);
-    setToastMessage(`Generated 10 match slots for Matchweek ${selectedWeek}.`);
+    setToastMessage(`Generated 10 match slots for Matchweek ${selectedWeek} (${dateStr} ${timeStr}).`);
+  };
+
+  // Generate 10 empty match slots for this matchweek matching standings pairs
+  const handleGenerate10Slots = () => {
+    if (rows.length > 0) {
+      setConfirmModal({
+        isOpen: true,
+        title: 'Generate 10 Slots',
+        message: `Replace existing matches in Matchweek ${selectedWeek} with 10 slots?`,
+        confirmLabel: 'Generate',
+        variant: 'warning',
+        onConfirm: generate10SlotsInternal,
+      });
+      return;
+    }
+    generate10SlotsInternal();
   };
 
   // Save single match
@@ -373,22 +462,27 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
   // Clear all matches for this matchweek
   const handleClearWeek = () => {
-    if (!window.confirm(`Clear all matches for Matchweek ${selectedWeek}?`)) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset Matchweek',
+      message: `Clear all matches for Matchweek ${selectedWeek}?`,
+      confirmLabel: 'Reset Week',
+      variant: 'danger',
+      onConfirm: () => {
+        try {
+          localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
+        } catch (_) {}
 
-    try {
-      localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
-    } catch (_) {}
+        if (onClearMatchweekMatches) {
+          onClearMatchweekMatches(selectedWeek);
+        } else {
+          rows.forEach((r) => onDeleteEplMatch(r.id));
+        }
 
-    if (onClearMatchweekMatches) {
-      onClearMatchweekMatches(selectedWeek);
-    } else {
-      rows.forEach((r) => onDeleteEplMatch(r.id));
-    }
-
-    setRows([]);
-    setToastMessage(`Matchweek ${selectedWeek} matches cleared.`);
+        setRows([]);
+        setToastMessage(`Matchweek ${selectedWeek} matches cleared.`);
+      },
+    });
   };
 
   const finishedCount = rows.filter(
@@ -495,9 +589,12 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           <div className="flex items-center justify-between sm:justify-start space-x-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
             <span>Total: <strong className="text-slate-900 font-bold">{rows.length}</strong></span>
             <span>•</span>
-            <span>Finished: <strong className="text-emerald-700 font-bold">{finishedCount}</strong></span>
+            <span className="text-emerald-700 font-bold flex items-center space-x-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 inline" />
+              <span>Finished: {finishedCount}</span>
+            </span>
             <span>•</span>
-            <span>Unfinished: <strong className="text-amber-700 font-bold">{rows.length - finishedCount}</strong></span>
+            <span className="text-amber-700 font-bold">Pending: {rows.length - finishedCount}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
@@ -530,6 +627,105 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             )}
           </div>
         </div>
+
+        {/* Master Matchweek Schedule (Batch Date & Time Sync Bar) */}
+        {rows.length > 0 && (
+          <div className="pt-3 border-t border-slate-200/80 flex flex-col gap-2.5">
+            <div className="bg-slate-50/90 rounded-2xl p-3 sm:p-3.5 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-xs sm:text-sm font-black text-slate-900">
+                    Matchweek {selectedWeek} Schedule
+                  </span>
+                </div>
+              </div>
+
+              {/* Master Date, Time, and Apply Controls */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center space-x-1.5 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <input
+                    type="date"
+                    value={masterDate}
+                    onChange={(e) => handleMasterDateChange(e.target.value)}
+                    className="text-xs text-slate-800 font-bold bg-transparent focus:outline-none cursor-pointer"
+                    title="Date"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-1.5 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                  <input
+                    type="text"
+                    value={masterTime}
+                    onChange={(e) => handleMasterTimeChange(e.target.value)}
+                    placeholder="20:00 BST"
+                    className="text-xs text-slate-800 font-bold bg-transparent w-24 sm:w-28 focus:outline-none"
+                    title="Time"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleApplyMasterDateTimeToAll()}
+                  className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
+                  title="Apply to all matches"
+                >
+                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Apply to All</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Kickoff Presets */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs text-slate-500">
+              <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">Presets:</span>
+              {[
+                '12:30 BST',
+                '15:00 BST',
+                '17:30 BST',
+                '14:00 BST',
+                '16:30 BST',
+                '20:00 BST',
+              ].map((presetTime) => (
+                <button
+                  key={presetTime}
+                  type="button"
+                  onClick={() => handleMasterTimeChange(presetTime)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
+                    masterTime === presetTime
+                      ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                  title={presetTime}
+                >
+                  {presetTime}
+                </button>
+              ))}
+            </div>
+
+            {/* Visual Progress Bar for completed entry slots */}
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-[11px] font-bold">
+                <span className="text-slate-600">
+                  Finished: <strong className="text-slate-900 font-extrabold">{finishedCount} / {rows.length}</strong>
+                </span>
+                <span className={finishedCount === rows.length && rows.length > 0 ? 'text-emerald-600 font-black' : 'text-amber-600 font-bold'}>
+                  {rows.length > 0 ? Math.round((finishedCount / rows.length) * 100) : 0}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
+                <div
+                  className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
+                  style={{ width: `${rows.length > 0 ? (finishedCount / rows.length) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Match Cards Container */}
@@ -575,65 +771,96 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
             const isPlayed =
               row.homeScore.trim() !== '' && row.awayScore.trim() !== '';
+            const isPartiallyFilled =
+              (row.homeScore.trim() !== '' && row.awayScore.trim() === '') ||
+              (row.homeScore.trim() === '' && row.awayScore.trim() !== '');
 
             return (
               <div
                 key={row.id || index}
-                className={`bg-white rounded-2xl border transition-all p-4 sm:p-5 shadow-xs ${
-                  row.isDirty
-                    ? 'border-amber-300 ring-2 ring-amber-100'
-                    : 'border-slate-200 hover:border-slate-300'
+                className={`rounded-2xl border transition-all p-4 sm:p-5 shadow-xs border-l-[6px] ${
+                  isPlayed
+                    ? 'bg-emerald-50/70 border-emerald-400 border-l-emerald-600 ring-2 ring-emerald-200/60'
+                    : isPartiallyFilled
+                    ? 'bg-amber-50/50 border-amber-300 border-l-amber-500 ring-2 ring-amber-200/50'
+                    : row.isDirty
+                    ? 'bg-white border-amber-300 border-l-amber-400 ring-2 ring-amber-100'
+                    : 'bg-white border-slate-200 hover:border-slate-300 border-l-slate-300'
                 }`}
               >
                 {/* Match Header Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs gap-2">
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                    <span className="font-mono font-black text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <span className={`font-mono font-black px-2.5 py-1 rounded-lg ${
+                      isPlayed
+                        ? 'bg-emerald-200/80 text-emerald-900'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}>
                       Match #{index + 1}
                     </span>
 
                     {/* Status Badge */}
                     {isPlayed ? (
-                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold flex items-center space-x-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span className="bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold flex items-center space-x-1 text-xs shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                         <span>Finished</span>
                       </span>
+                    ) : isPartiallyFilled ? (
+                      <span className="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full font-bold flex items-center space-x-1 text-xs">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Partial</span>
+                      </span>
                     ) : (
-                      <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-semibold flex items-center space-x-1">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>Upcoming</span>
+                      <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-semibold flex items-center space-x-1 text-xs">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Pending</span>
                       </span>
                     )}
 
                     {row.isDirty && (
-                      <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                      <span className="bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md font-bold text-[10px]">
                         Unsaved
                       </span>
                     )}
                   </div>
 
-                  {/* Date & Time quick inputs */}
-                  <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end">
+                  {/* Date & Time individual inputs + quick copy to other matches */}
+                  <div className="flex items-center space-x-2 w-full sm:w-auto justify-between sm:justify-end flex-wrap gap-y-1">
                     <input
                       type="date"
                       value={row.date}
                       onChange={(e) => updateRow(index, 'date', e.target.value)}
-                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 sm:flex-none"
+                      title="Date"
+                      className="text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 sm:flex-none shadow-2xs"
                     />
                     <input
                       type="text"
                       value={row.time}
                       onChange={(e) => updateRow(index, 'time', e.target.value)}
                       placeholder="20:00 BST"
-                      className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 w-24 sm:w-28 text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-red-500"
+                      title="Time"
+                      className="text-xs bg-white border border-slate-300 rounded-lg px-2 py-1 w-24 sm:w-28 text-slate-800 font-semibold focus:outline-none focus:ring-1 focus:ring-red-500 shadow-2xs"
                     />
+                    <button
+                      type="button"
+                      onClick={() => copyDateTimeToAllMatches(row.date, row.time, index)}
+                      className="text-[11px] font-bold text-slate-700 hover:text-slate-950 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg px-2 py-1 flex items-center space-x-1 shadow-2xs transition-colors cursor-pointer"
+                      title="Copy to all matches"
+                    >
+                      <Copy className="w-3 h-3 text-slate-500 shrink-0" />
+                      <span className="hidden sm:inline">Copy to All</span>
+                    </button>
                   </div>
                 </div>
 
                 {/* Team Selection & Score Entry Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-3 sm:gap-4 items-center">
                   {/* Home Team Side (cols 1-4) - Dropdown ordered by Standings */}
-                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 min-w-0">
+                  <div className={`md:col-span-4 flex items-center space-x-3 p-3 rounded-2xl border min-w-0 transition-colors ${
+                    isPlayed
+                      ? 'bg-white/90 border-emerald-200'
+                      : 'bg-slate-50/70 border-slate-100'
+                  }`}>
                     <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
                       <TeamCrest teamName={row.homeTeam} size={28} />
                     </div>
@@ -645,7 +872,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       <select
                         value={row.homeTeam}
                         onChange={(e) => updateRow(index, 'homeTeam', e.target.value)}
-                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate"
+                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate shadow-2xs"
                       >
                         {standingsTeams.map((t) => (
                           <option key={t.name} value={t.name}>
@@ -660,8 +887,20 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   </div>
 
                   {/* Score Entry Center (cols 5-7) */}
-                  <div className="md:col-span-3 flex flex-col items-center justify-center space-y-1 bg-red-50/40 p-2.5 sm:p-3 rounded-2xl border border-red-100">
-                    <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider">
+                  <div className={`md:col-span-3 flex flex-col items-center justify-center space-y-1 p-2.5 sm:p-3 rounded-2xl border transition-colors ${
+                    isPlayed
+                      ? 'bg-emerald-100/90 border-2 border-emerald-400'
+                      : isPartiallyFilled
+                      ? 'bg-amber-100/80 border-2 border-amber-300'
+                      : 'bg-red-50/40 border border-red-100'
+                  }`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                      isPlayed
+                        ? 'text-emerald-800'
+                        : isPartiallyFilled
+                        ? 'text-amber-800'
+                        : 'text-red-600'
+                    }`}>
                       Score
                     </span>
 
@@ -673,7 +912,11 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                         value={row.homeScore}
                         onChange={(e) => updateRow(index, 'homeScore', e.target.value)}
                         placeholder="-"
-                        className="w-14 h-12 text-center text-xl font-black font-mono bg-white border-2 border-red-200 rounded-xl text-slate-900 focus:outline-none focus:border-red-600 shadow-xs"
+                        className={`w-14 h-12 text-center text-xl font-black font-mono bg-white rounded-xl focus:outline-none shadow-xs transition-colors ${
+                          isPlayed
+                            ? 'border-2 border-emerald-500 text-emerald-950 focus:border-emerald-700'
+                            : 'border-2 border-red-200 text-slate-900 focus:border-red-600'
+                        }`}
                       />
                       <span className="text-xl font-black text-slate-400">:</span>
                       <input
@@ -683,13 +926,21 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                         value={row.awayScore}
                         onChange={(e) => updateRow(index, 'awayScore', e.target.value)}
                         placeholder="-"
-                        className="w-14 h-12 text-center text-xl font-black font-mono bg-white border-2 border-red-200 rounded-xl text-slate-900 focus:outline-none focus:border-red-600 shadow-xs"
+                        className={`w-14 h-12 text-center text-xl font-black font-mono bg-white rounded-xl focus:outline-none shadow-xs transition-colors ${
+                          isPlayed
+                            ? 'border-2 border-emerald-500 text-emerald-950 focus:border-emerald-700'
+                            : 'border-2 border-red-200 text-slate-900 focus:border-red-600'
+                        }`}
                       />
                     </div>
                   </div>
 
                   {/* Away Team Side (cols 8-11) - Dropdown ordered by Standings */}
-                  <div className="md:col-span-4 flex items-center space-x-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-100 min-w-0">
+                  <div className={`md:col-span-4 flex items-center space-x-3 p-3 rounded-2xl border min-w-0 transition-colors ${
+                    isPlayed
+                      ? 'bg-white/90 border-emerald-200'
+                      : 'bg-slate-50/70 border-slate-100'
+                  }`}>
                     <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-xs border border-slate-200">
                       <TeamCrest teamName={row.awayTeam} size={28} />
                     </div>
@@ -701,7 +952,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                       <select
                         value={row.awayTeam}
                         onChange={(e) => updateRow(index, 'awayTeam', e.target.value)}
-                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate"
+                        className="w-full text-xs sm:text-sm font-black text-slate-900 bg-white border border-slate-200 rounded-xl px-2.5 sm:px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer truncate shadow-2xs"
                       >
                         {standingsTeams.map((t) => (
                           <option key={t.name} value={t.name}>
@@ -797,6 +1048,12 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal */}
+      <ConfirmActionModal
+        config={confirmModal}
+        onClose={() => setConfirmModal(null)}
+      />
     </div>
   );
 };

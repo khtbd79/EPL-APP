@@ -239,27 +239,77 @@ export const removeStoredDraft = (key: string): void => {
 export const clearAllData = (): AppState => {
   if (typeof window !== 'undefined') {
     delete (window as any).__PRELOADED_APP_STATE__;
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k) {
+          if (
+            k.startsWith('btts_') ||
+            k.startsWith('epl_') ||
+            k === STORAGE_KEY ||
+            k === BACKUP_STORAGE_KEY
+          ) {
+            // preserve only user's chosen theme if they have one
+            if (k !== 'btts_layout_theme') {
+              keysToRemove.push(k);
+            }
+          }
+        }
+      }
+      keysToRemove.forEach((k) => {
+        try {
+          localStorage.removeItem(k);
+        } catch (_) {}
+      });
+    } catch (err) {
+      console.warn('Failed to clear LocalStorage:', err);
+    }
   }
+
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(BACKUP_STORAGE_KEY);
-    localStorage.removeItem('btts_app_state_v1');
-    localStorage.removeItem('btts_epl_teams_v2');
-    localStorage.removeItem('btts_daily_bet_draft');
-    localStorage.removeItem('btts_epl_form_draft');
-    localStorage.removeItem('btts_epl_match_center_prefs');
-    localStorage.removeItem('btts_compounding_draft');
-    localStorage.removeItem('btts_active_tab');
-  } catch (err) {
-    console.warn('Failed to clear LocalStorage:', err);
-  }
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.clear();
   } catch (e) {
     // ignore
   }
+
+  // Clear IndexedDB
   clearIndexedDBState().catch(() => {});
-  return INITIAL_STATE;
+
+  let currentTheme: any = DEFAULT_SETTINGS.layoutTheme || 'white_red';
+  if (typeof window !== 'undefined') {
+    try {
+      currentTheme = localStorage.getItem('btts_layout_theme') || currentTheme;
+    } catch (_) {}
+  }
+
+  // Construct a fresh, completely decoupled initial state
+  const cleanState: AppState = {
+    currentDay: 1,
+    currentMatchweek: 1,
+    matchHistory: [],
+    eplMatches: [],
+    marketRecords: [],
+    preMatchNotes: {},
+    categoryRankings: {},
+    settings: {
+      ...DEFAULT_SETTINGS,
+      layoutTheme: currentTheme,
+    },
+    lastSavedAt: Date.now(),
+  };
+
+  // Explicitly write clean state to storage
+  try {
+    const serialized = JSON.stringify(cleanState);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    localStorage.setItem(BACKUP_STORAGE_KEY, serialized);
+  } catch (_) {}
+
+  // Also write clean state into IndexedDB to overwrite any previous record
+  saveStateToIndexedDB(cleanState).catch(() => {});
+
+  return cleanState;
 };
 
 // Financial Calculations

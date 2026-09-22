@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AppState, ActiveTab } from '../types';
 import { formatMoney, getStoredDraft, setStoredDraft } from '../utils/storage';
+import { ConfirmActionModal, ConfirmModalConfig } from './ConfirmActionModal';
 import {
   Calculator,
   RotateCcw,
@@ -58,6 +59,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   const planCurrency = appCurrency;
   const [customDayOdds, setCustomDayOdds] = useState<Record<number, number>>(initialData.customDayOdds || {});
   const [dayStatuses, setDayStatuses] = useState<Record<number, DayStatus>>(initialData.dayStatuses || {});
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
 
   useEffect(() => {
     setStoredDraft(STANDALONE_COMPOUNDING_KEY, {
@@ -167,10 +169,17 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   };
 
   const handleResetChallenge = () => {
-    if (window.confirm('Reset all 30-day tracking statuses and custom odds?')) {
-      setCustomDayOdds({});
-      setDayStatuses({});
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reset Challenge',
+      message: 'Reset all 30-day tracking statuses and custom odds?',
+      confirmLabel: 'Reset',
+      variant: 'danger',
+      onConfirm: () => {
+        setCustomDayOdds({});
+        setDayStatuses({});
+      },
+    });
   };
 
   const handleApplyPreset = (capital: string, odds: string, reinvest: string) => {
@@ -512,6 +521,11 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
           </table>
         </div>
       </div>
+
+      <ConfirmActionModal
+        config={confirmModal}
+        onClose={() => setConfirmModal(null)}
+      />
     </div>
   );
 };
