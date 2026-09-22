@@ -267,6 +267,22 @@ export default function App() {
     }));
   };
 
+  const handleUpdateMatchRecord = (updatedMatch: MatchRecord) => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      matchHistory: prev.matchHistory.map((m) =>
+        m.id === updatedMatch.id ? updatedMatch : m
+      ),
+    }));
+  };
+
+  const handleClearPendingMatches = () => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      matchHistory: prev.matchHistory.filter((m) => m.result !== 'PENDING'),
+    }));
+  };
+
   // Handlers for EPL 20 Teams & Matchweek Match Center
   const handleAddEplMatch = (match: EPLMatchEvent) => {
     handleSaveEplMatch(match);
@@ -535,6 +551,10 @@ export default function App() {
               state={state}
               onRecordMatch={handleRecordMatch}
               onUpdateMatchStatus={handleUpdateMatchStatus}
+              onDeleteMatch={handleDeleteMatch}
+              onUpdateMatch={handleUpdateMatchRecord}
+              onClearPendingMatches={handleClearPendingMatches}
+              onNavigateTab={setActiveTab}
             />
           )}
 

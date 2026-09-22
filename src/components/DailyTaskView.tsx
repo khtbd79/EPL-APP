@@ -12,7 +12,11 @@ import {
   Ban,
   Activity,
   Ticket,
-  ChevronDown
+  ChevronDown,
+  Trash2,
+  PenSquare,
+  ArrowRight,
+  RefreshCw
 } from 'lucide-react';
 
 import { ALL_EPL_TEAM_NAMES } from '../utils/teamData';
@@ -36,6 +40,10 @@ interface DailyTaskViewProps {
   state: AppState;
   onRecordMatch: (match: MatchRecord) => void;
   onUpdateMatchStatus: (id: string, result: 'WIN' | 'LOSS' | 'VOID') => void;
+  onDeleteMatch?: (id: string) => void;
+  onUpdateMatch?: (match: MatchRecord) => void;
+  onClearPendingMatches?: () => void;
+  onNavigateTab?: (tab: any) => void;
 }
 
 const DAILY_BET_DRAFT_KEY = 'btts_daily_bet_draft';
@@ -57,6 +65,10 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
   state,
   onRecordMatch,
   onUpdateMatchStatus,
+  onDeleteMatch,
+  onUpdateMatch,
+  onClearPendingMatches,
+  onNavigateTab,
 }) => {
   const fin = calculateFinancials(state);
   const currency = state.settings.currency || '$';
@@ -240,6 +252,58 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
     setTimeout(() => setSuccessBanner(null), 4000);
   };
 
+  // Load a pending match into the New Match Entry form to decide / finalize bet
+  const handleLoadIntoForm = (m: MatchRecord) => {
+    setHomeTeam(m.homeTeam);
+    setAwayTeam(m.awayTeam);
+    if (m.date) setMatchDate(m.date);
+    if (m.matchTime) setMatchTime(m.matchTime);
+    if (m.league) setLeague(m.league);
+    setMarket(m.market);
+    setOddsStr(String(m.odds || '1.85'));
+    setStakeStr(String(m.stake || '100'));
+    if (m.selection) setSelection(m.selection);
+    if (m.notes) setNotes(m.notes);
+    setSuccessBanner(`Loaded ${m.homeTeam} vs ${m.awayTeam} (${m.market}) into entry form.`);
+    setTimeout(() => setSuccessBanner(null), 3500);
+
+    const formEl = document.getElementById('new-match-entry-card');
+    if (formEl) {
+      formEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Inline quick update of Stake
+  const handleInlineUpdateStake = (match: MatchRecord, newStakeStr: string) => {
+    const newStake = parseFloat(newStakeStr);
+    if (!isNaN(newStake) && newStake >= 0 && onUpdateMatch) {
+      onUpdateMatch({
+        ...match,
+        stake: newStake,
+      });
+    }
+  };
+
+  // Inline quick update of Odds
+  const handleInlineUpdateOdds = (match: MatchRecord, newOddsStr: string) => {
+    const newOdds = parseFloat(newOddsStr);
+    if (!isNaN(newOdds) && newOdds > 1 && onUpdateMatch) {
+      onUpdateMatch({
+        ...match,
+        odds: newOdds,
+      });
+    }
+  };
+
+  // Delete a single pending match selection
+  const handleDeletePendingMatch = (id: string, matchDesc?: string) => {
+    if (onDeleteMatch) {
+      onDeleteMatch(id);
+      setSuccessBanner(matchDesc ? `Removed ${matchDesc}` : 'Selection removed');
+      setTimeout(() => setSuccessBanner(null), 3000);
+    }
+  };
+
   return (
     <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto space-y-6 animate-fadeIn pb-36 sm:pb-40">
       {/* Header Badge */}
@@ -273,82 +337,162 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
       )}
 
       {/* PENDING / RUNNING MATCHES SECTION */}
-      <div className="solid-card p-6 border border-red-100 bg-white rounded-2xl shadow-sm">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+      <div className="solid-card p-6 border border-red-100 bg-white rounded-2xl shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-2">
-            <Clock className="w-5 h-5 text-amber-500" />
-            <h2 className="text-lg font-black text-slate-900 tracking-tight">Running Matches</h2>
+            <Clock className="w-5 h-5 text-red-600" />
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Running Matches & Selections</h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 font-mono">
               {pendingMatches.length} Open
             </span>
           </div>
+
+          <div className="flex items-center space-x-2">
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('demo_match')}
+                className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <span>Compare More Matches</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {pendingMatches.length > 0 && onClearPendingMatches && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Clear all open pending match selections?')) {
+                    onClearPendingMatches();
+                    setSuccessBanner('All open pending selections cleared.');
+                    setTimeout(() => setSuccessBanner(null), 3000);
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold transition-all cursor-pointer"
+                title="Clear All Pending"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
         </div>
 
         {pendingMatches.length === 0 ? (
-          <div className="text-center py-8 text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-            <Activity className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-50" />
-            <span>No pending matches</span>
+          <div className="text-center py-10 text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+            <Activity className="w-8 h-8 text-slate-400 mx-auto opacity-50" />
+            <p>No pending matches or selections</p>
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('demo_match')}
+                className="mt-2 px-4 py-2 bg-white hover:bg-slate-100 text-red-600 border border-red-200 rounded-xl font-bold text-xs inline-flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <span>+ Pick from Match Comparison</span>
+              </button>
+            )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {pendingMatches.map((match, index) => {
               const matchProfit = Number((match.stake * (match.odds - 1)).toFixed(2));
               return (
                 <div
                   key={match.id}
-                  className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200 hover:border-red-200 transition-all space-y-3"
+                  className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200 hover:border-red-200 transition-all space-y-3"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center space-x-3">
-                      <span className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-mono font-bold text-xs border border-red-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-start sm:items-center space-x-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-mono font-bold text-xs border border-red-200 shrink-0">
                         #{String(match.dayNumber || index + 1).padStart(2, '0')}
                       </span>
                       <div>
-                        <div className="font-black text-slate-900 text-sm sm:text-base">
-                          {match.homeTeam} <span className="text-slate-400 font-normal">vs</span> {match.awayTeam}
+                        <div className="font-black text-slate-900 text-sm sm:text-base flex items-center space-x-1.5 flex-wrap">
+                          <span>{match.homeTeam}</span>
+                          <span className="text-red-500 font-normal">vs</span>
+                          <span>{match.awayTeam}</span>
                         </div>
-                        <div className="text-slate-500 text-xs font-medium">
-                          {match.league} • Market: <span className="text-slate-800 font-bold">{match.market}</span>
+                        <div className="text-slate-500 text-xs font-medium flex items-center space-x-2 flex-wrap mt-0.5">
+                          <span>{match.league}</span>
+                          {match.date && <span>• {match.date}</span>}
+                          {match.matchTime && <span>• {match.matchTime}</span>}
+                          <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 font-bold text-[11px]">
+                            {match.market}
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 self-end sm:self-center">
+                    <div className="flex items-center space-x-1.5 self-end sm:self-center shrink-0">
+                      <button
+                        onClick={() => handleLoadIntoForm(match)}
+                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-xs"
+                        title="Load into form below to customize or place bet"
+                      >
+                        <PenSquare className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Form</span>
+                      </button>
                       <button
                         onClick={() => setActiveSlipMatch(match)}
-                        className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
+                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-xs"
                         title="View / Download Match Slip"
                       >
                         <Ticket className="w-3.5 h-3.5 text-slate-500" />
                         <span>Slip</span>
                       </button>
+                      <button
+                        onClick={() => handleDeletePendingMatch(match.id, `${match.homeTeam} vs ${match.awayTeam}`)}
+                        className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+                        title="Delete this selection"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-200 text-xs">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <div>
-                        <span className="text-slate-500">Stake: </span>
-                        <span className="font-mono font-black text-slate-900">{formatMoney(match.stake, currency)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-200 text-xs">
+                    {/* Inline Stake & Odds Adjuster */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-slate-500 font-medium">Stake:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="10"
+                          value={match.stake}
+                          onChange={(e) => handleInlineUpdateStake(match, e.target.value)}
+                          className="w-20 px-2 py-1 bg-white border border-slate-300 focus:border-red-500 rounded-lg text-xs font-mono font-bold text-slate-900 outline-hidden"
+                          title="Click to adjust stake"
+                        />
+                        <span className="text-slate-400 text-[11px] font-mono">{currency}</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500">Odds: </span>
-                        <span className="font-mono font-black text-emerald-600">{match.odds.toFixed(2)}</span>
+
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-slate-500 font-medium">Odds:</span>
+                        <input
+                          type="number"
+                          min="1.01"
+                          step="0.05"
+                          value={match.odds}
+                          onChange={(e) => handleInlineUpdateOdds(match, e.target.value)}
+                          className="w-18 px-2 py-1 bg-white border border-slate-300 focus:border-red-500 rounded-lg text-xs font-mono font-bold text-emerald-600 outline-hidden"
+                          title="Click to adjust odds"
+                        />
                       </div>
-                      <div>
-                        <span className="text-slate-500">To Win: </span>
-                        <span className="font-mono font-black text-emerald-600">+{formatMoney(matchProfit, currency)}</span>
+
+                      <div className="flex items-center space-x-1">
+                        <span className="text-slate-500 font-medium">To Win:</span>
+                        <span className="font-mono font-black text-emerald-600">
+                          +{formatMoney(matchProfit, currency)}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                    {/* Settlement Buttons */}
+                    <div className="flex items-center gap-1.5 justify-end">
                       <button
                         onClick={() => {
                           onUpdateMatchStatus(match.id, 'WIN');
                           setSuccessBanner(`Match marked as WIN! Profit +${formatMoney(matchProfit, currency)} credited to balance.`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="flex-1 sm:flex-none py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
+                        className="py-1.5 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                         <span>WIN</span>
@@ -360,7 +504,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                           setSuccessBanner(`Match marked as LOSS. Stake -${formatMoney(match.stake, currency)} deducted from balance.`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="flex-1 sm:flex-none py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
+                        className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-black rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs whitespace-nowrap"
                       >
                         <XCircle className="w-3.5 h-3.5 shrink-0" />
                         <span>LOSS</span>
@@ -372,7 +516,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
                           setSuccessBanner(`Match marked as VOID (Refunded).`);
                           setTimeout(() => setSuccessBanner(null), 4000);
                         }}
-                        className="flex-1 sm:flex-none py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                        className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                       >
                         <Ban className="w-3.5 h-3.5 shrink-0" />
                         <span>VOID</span>
@@ -387,7 +531,7 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
       </div>
 
       {/* NEW MATCH ENTRY FORM CARD */}
-      <div className="solid-card p-6 space-y-6 bg-white border border-red-100 rounded-2xl shadow-sm">
+      <div id="new-match-entry-card" className="solid-card p-6 space-y-6 bg-white border border-red-100 rounded-2xl shadow-sm">
         <div className="flex items-center justify-between pb-3 border-b border-red-100">
           <div className="flex items-center space-x-2">
             <PlusCircle className="w-5 h-5 text-red-600" />

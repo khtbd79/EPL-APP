@@ -31,6 +31,7 @@ import {
   Sparkles,
   Activity,
   Trophy,
+  Plus,
 } from 'lucide-react';
 
 interface MatchSelectViewProps {
@@ -44,6 +45,7 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
   state,
   onNavigateTab,
   onAddMarketRecord,
+  onRecordMatch,
 }) => {
   const [homeTeam, setHomeTeam] = useState<string>('Arsenal');
   const [awayTeam, setAwayTeam] = useState<string>('Chelsea');
@@ -53,6 +55,20 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
   const [copiedSignalId, setCopiedSignalId] = useState<string | null>(null);
   const [addedRecordNotice, setAddedRecordNotice] = useState<string | null>(null);
+
+  const pendingCount = useMemo(() => {
+    return (state.matchHistory || []).filter((m) => m.result === 'PENDING').length;
+  }, [state.matchHistory]);
+
+  const isSignalInPending = (marketName: string) => {
+    return (state.matchHistory || []).some(
+      (m) =>
+        m.result === 'PENDING' &&
+        m.homeTeam.trim().toLowerCase() === homeTeam.trim().toLowerCase() &&
+        m.awayTeam.trim().toLowerCase() === awayTeam.trim().toLowerCase() &&
+        m.market.trim().toLowerCase() === marketName.trim().toLowerCase()
+    );
+  };
 
   const savedAnalyses = useMemo(() => loadSavedAnalyses(), []);
 
@@ -80,26 +96,56 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
   }, [analysisResult, activeCategoryFilter]);
 
   const handleAddToMarketRecords = (signal: MarketSignal) => {
-    if (!onAddMarketRecord) return;
-    const newEntry: MarketRecordEntry = {
-      id: generateId(),
-      createdAt: new Date().toISOString(),
-      date: matchDate,
-      matchTime: matchTime,
-      homeTeam,
-      awayTeam,
-      venue: analysisResult.venue,
-      selectedMarkets: [signal.marketName],
-      odds: signal.fairOdds,
-      result: 'PENDING',
-      notes: `${signal.marketName} • ${signal.probability}%`,
-    };
+    const entryId = generateId();
+    const fairOdds = typeof signal.fairOdds === 'number' && signal.fairOdds > 1 ? signal.fairOdds : 1.85;
+    const defaultStake = 100;
 
-    onAddMarketRecord(newEntry);
-    setAddedRecordNotice(`${signal.marketName} SAVED`);
+    // 1. Add as pending match line-by-line item to Select Match
+    if (onRecordMatch) {
+      const newPendingMatch: MatchRecord = {
+        id: entryId,
+        dayNumber: state.currentDay,
+        date: matchDate.trim() || new Date().toISOString().split('T')[0],
+        matchTime: matchTime.trim() || undefined,
+        league: 'Premier League',
+        homeTeam: homeTeam.trim(),
+        awayTeam: awayTeam.trim(),
+        market: signal.marketName,
+        selection: signal.marketName,
+        odds: fairOdds,
+        stake: defaultStake,
+        result: 'PENDING',
+        profit: 0,
+        loss: 0,
+        netPnL: 0,
+        bankrollAfter: 0,
+        notes: `From Match Comparison • ${signal.probability}%`,
+      };
+      onRecordMatch(newPendingMatch);
+    }
+
+    // 2. Also save into marketRecords for analysis persistence
+    if (onAddMarketRecord) {
+      const newEntry: MarketRecordEntry = {
+        id: entryId,
+        createdAt: new Date().toISOString(),
+        date: matchDate,
+        matchTime: matchTime,
+        homeTeam,
+        awayTeam,
+        venue: analysisResult.venue,
+        selectedMarkets: [signal.marketName],
+        odds: fairOdds,
+        result: 'PENDING',
+        notes: `${signal.marketName} • ${signal.probability}%`,
+      };
+      onAddMarketRecord(newEntry);
+    }
+
+    setAddedRecordNotice(`Added ${signal.marketName} to Select Match`);
     setTimeout(() => {
       setAddedRecordNotice(null);
-    }, 2500);
+    }, 3000);
   };
 
   const handleCopyAnalysis = (signal?: MarketSignal) => {
@@ -212,7 +258,7 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
               className="py-2 px-3.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
             >
               <Target className="w-3.5 h-3.5" />
-              <span>SELECT MATCH</span>
+              <span>SELECT MATCH {pendingCount > 0 ? `(${pendingCount})` : ''}</span>
             </button>
           )}
         </div>
@@ -427,6 +473,18 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
                 <div className="text-sm font-black text-purple-700 mt-1 truncate max-w-[140px]">
                   {analysisResult.topSignals[0]?.marketName || '-'}
                 </div>
+                {analysisResult.topSignals[0] && (
+                  <button
+                    onClick={() => handleAddToMarketRecords(analysisResult.topSignals[0])}
+                    className="mt-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 underline flex items-center space-x-1 cursor-pointer"
+                  >
+                    <span>
+                      {isSignalInPending(analysisResult.topSignals[0].marketName)
+                        ? '✓ In Select Match'
+                        : '+ Add to Select Match'}
+                    </span>
+                  </button>
+                )}
               </div>
               <div className="p-2.5 rounded-lg bg-purple-50 text-purple-600 border border-purple-200">
                 <Sparkles className="w-5 h-5" />
@@ -533,10 +591,23 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
                   <div className="pt-2 border-t border-slate-200 flex items-center space-x-2">
                     <button
                       onClick={() => handleAddToMarketRecords(sig)}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer active:scale-95 shadow-xs"
+                      className={`flex-1 py-1.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer active:scale-95 shadow-xs ${
+                        isSignalInPending(sig.marketName)
+                          ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300'
+                          : 'bg-red-600 hover:bg-red-700 text-white'
+                      }`}
                     >
-                      <BookmarkPlus className="w-3.5 h-3.5" />
-                      <span>SAVE TO RECORDS</span>
+                      {isSignalInPending(sig.marketName) ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>IN SELECT MATCH</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>ADD TO SELECT MATCH</span>
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={() => handleCopyAnalysis(sig)}
