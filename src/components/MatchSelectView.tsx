@@ -3,6 +3,7 @@ import {
   AppState,
   MarketRecordEntry,
   MatchRecord,
+  CandidateMatch,
   ActiveTab,
 } from '../types';
 import { ALL_EPL_20_TEAMS, getTeamInfo } from '../utils/teamData';
@@ -39,6 +40,7 @@ interface MatchSelectViewProps {
   onNavigateTab?: (tab: ActiveTab) => void;
   onAddMarketRecord?: (entry: MarketRecordEntry) => void;
   onRecordMatch?: (match: MatchRecord) => void;
+  onAddCandidateMatch?: (candidate: CandidateMatch) => void;
 }
 
 export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
@@ -46,6 +48,7 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
   onNavigateTab,
   onAddMarketRecord,
   onRecordMatch,
+  onAddCandidateMatch,
 }) => {
   const [homeTeam, setHomeTeam] = useState<string>('Arsenal');
   const [awayTeam, setAwayTeam] = useState<string>('Chelsea');
@@ -57,17 +60,26 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
   const [addedRecordNotice, setAddedRecordNotice] = useState<string | null>(null);
 
   const pendingCount = useMemo(() => {
-    return (state.matchHistory || []).filter((m) => m.result === 'PENDING').length;
-  }, [state.matchHistory]);
+    const candidateCount = (state.candidateMatches || []).length;
+    const pendingHistory = (state.matchHistory || []).filter((m) => m.result === 'PENDING').length;
+    return candidateCount + pendingHistory;
+  }, [state.candidateMatches, state.matchHistory]);
 
   const isSignalInPending = (marketName: string) => {
-    return (state.matchHistory || []).some(
+    const inCandidate = (state.candidateMatches || []).some(
+      (c) =>
+        c.homeTeam.trim().toLowerCase() === homeTeam.trim().toLowerCase() &&
+        c.awayTeam.trim().toLowerCase() === awayTeam.trim().toLowerCase() &&
+        c.market.trim().toLowerCase() === marketName.trim().toLowerCase()
+    );
+    const inHistory = (state.matchHistory || []).some(
       (m) =>
         m.result === 'PENDING' &&
         m.homeTeam.trim().toLowerCase() === homeTeam.trim().toLowerCase() &&
         m.awayTeam.trim().toLowerCase() === awayTeam.trim().toLowerCase() &&
         m.market.trim().toLowerCase() === marketName.trim().toLowerCase()
     );
+    return inCandidate || inHistory;
   };
 
   const savedAnalyses = useMemo(() => loadSavedAnalyses(), []);
@@ -100,8 +112,23 @@ export const MatchSelectView: React.FC<MatchSelectViewProps> = ({
     const fairOdds = typeof signal.fairOdds === 'number' && signal.fairOdds > 1 ? signal.fairOdds : 1.85;
     const defaultStake = 100;
 
-    // 1. Add as pending match line-by-line item to Select Match
-    if (onRecordMatch) {
+    // 1. Add as preliminary candidate selection to Select Match (does NOT go to Dashboard until confirmed in Select Match)
+    if (onAddCandidateMatch) {
+      const newCandidate: CandidateMatch = {
+        id: entryId,
+        createdAt: new Date().toISOString(),
+        date: matchDate.trim() || new Date().toISOString().split('T')[0],
+        matchTime: matchTime.trim() || undefined,
+        homeTeam: homeTeam.trim(),
+        awayTeam: awayTeam.trim(),
+        market: signal.marketName,
+        odds: fairOdds,
+        stake: defaultStake,
+        probability: signal.probability,
+        notes: `From Match Comparison • ${signal.probability}%`,
+      };
+      onAddCandidateMatch(newCandidate);
+    } else if (onRecordMatch) {
       const newPendingMatch: MatchRecord = {
         id: entryId,
         dayNumber: state.currentDay,

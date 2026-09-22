@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking } from './types';
+import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking, CandidateMatch } from './types';
 import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState, hasSavedStateData } from './utils/storage';
 import { normalizeTeamName, sanitizeAndDeduplicateMatches } from './utils/teamData';
 import { loadStateFromIndexedDB, saveStateToIndexedDB } from './utils/indexedDbStorage';
@@ -283,6 +283,72 @@ export default function App() {
     }));
   };
 
+  // Handlers for Candidate Matches (Shortlist from Match Comparison)
+  const handleAddCandidateMatch = (candidate: CandidateMatch) => {
+    updateAndSaveState((prev) => {
+      const existing = prev.candidateMatches || [];
+      if (existing.some((c) => c.id === candidate.id)) return prev;
+      return {
+        ...prev,
+        candidateMatches: [candidate, ...existing],
+      };
+    });
+  };
+
+  const handleDeleteCandidateMatch = (id: string) => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      candidateMatches: (prev.candidateMatches || []).filter((c) => c.id !== id),
+    }));
+  };
+
+  const handleUpdateCandidateMatch = (updated: CandidateMatch) => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      candidateMatches: (prev.candidateMatches || []).map((c) =>
+        c.id === updated.id ? updated : c
+      ),
+    }));
+  };
+
+  const handleClearCandidates = () => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      candidateMatches: [],
+    }));
+  };
+
+  const handleConfirmCandidateMatch = (candidate: CandidateMatch) => {
+    const stake = Number(candidate.stake) || 0;
+    const odds = Number(candidate.odds) || 1;
+
+    const newMatch: MatchRecord = {
+      id: candidate.id,
+      dayNumber: state.currentDay,
+      date: candidate.date,
+      matchTime: candidate.matchTime,
+      league: 'Premier League',
+      homeTeam: candidate.homeTeam,
+      awayTeam: candidate.awayTeam,
+      market: candidate.market,
+      selection: candidate.market,
+      odds,
+      stake,
+      result: 'PENDING',
+      profit: 0,
+      loss: 0,
+      netPnL: 0,
+      bankrollAfter: 0,
+      notes: candidate.notes,
+    };
+
+    updateAndSaveState((prev) => ({
+      ...prev,
+      matchHistory: [newMatch, ...prev.matchHistory],
+      candidateMatches: (prev.candidateMatches || []).filter((c) => c.id !== candidate.id),
+    }));
+  };
+
   // Handlers for EPL 20 Teams & Matchweek Match Center
   const handleAddEplMatch = (match: EPLMatchEvent) => {
     handleSaveEplMatch(match);
@@ -509,6 +575,8 @@ export default function App() {
               setActiveTab={setActiveTab}
               onRecordMatch={handleRecordMatch}
               onUpdateMatchStatus={handleUpdateMatchStatus}
+              onDeleteMatch={handleDeleteMatch}
+              onUpdateMatch={handleUpdateMatchRecord}
             />
           )}
 
@@ -543,6 +611,7 @@ export default function App() {
               onNavigateTab={setActiveTab}
               onAddMarketRecord={handleAddMarketRecord}
               onRecordMatch={handleRecordMatch}
+              onAddCandidateMatch={handleAddCandidateMatch}
             />
           )}
 
@@ -555,6 +624,10 @@ export default function App() {
               onUpdateMatch={handleUpdateMatchRecord}
               onClearPendingMatches={handleClearPendingMatches}
               onNavigateTab={setActiveTab}
+              onConfirmCandidate={handleConfirmCandidateMatch}
+              onDeleteCandidate={handleDeleteCandidateMatch}
+              onUpdateCandidate={handleUpdateCandidateMatch}
+              onClearCandidates={handleClearCandidates}
             />
           )}
 

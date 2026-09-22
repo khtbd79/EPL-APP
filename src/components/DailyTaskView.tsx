@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppState, MatchRecord } from '../types';
+import { AppState, MatchRecord, CandidateMatch } from '../types';
 import { calculateFinancials, formatMoney, generateId, getStoredDraft, setStoredDraft, removeStoredDraft } from '../utils/storage';
 import { BetSlipModal } from './BetSlipModal';
 import {
@@ -16,7 +16,8 @@ import {
   Trash2,
   PenSquare,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Target
 } from 'lucide-react';
 
 import { ALL_EPL_TEAM_NAMES } from '../utils/teamData';
@@ -44,6 +45,10 @@ interface DailyTaskViewProps {
   onUpdateMatch?: (match: MatchRecord) => void;
   onClearPendingMatches?: () => void;
   onNavigateTab?: (tab: any) => void;
+  onConfirmCandidate?: (candidate: CandidateMatch) => void;
+  onDeleteCandidate?: (id: string) => void;
+  onUpdateCandidate?: (candidate: CandidateMatch) => void;
+  onClearCandidates?: () => void;
 }
 
 const DAILY_BET_DRAFT_KEY = 'btts_daily_bet_draft';
@@ -69,6 +74,10 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
   onUpdateMatch,
   onClearPendingMatches,
   onNavigateTab,
+  onConfirmCandidate,
+  onDeleteCandidate,
+  onUpdateCandidate,
+  onClearCandidates,
 }) => {
   const fin = calculateFinancials(state);
   const currency = state.settings.currency || '$';
@@ -94,6 +103,131 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
   const [stakeStr, setStakeStr] = useState(initialDraft.stakeStr || '100');
   const [errorMsg, setErrorMsg] = useState('');
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  const candidates = state.candidateMatches || [];
+
+  // Confirm candidate into official pending bet (places bet and sends to Dashboard Pending Matches)
+  const handleConfirmCandidateBet = (cand: CandidateMatch) => {
+    if (onConfirmCandidate) {
+      onConfirmCandidate(cand);
+    } else {
+      const newMatch: MatchRecord = {
+        id: cand.id,
+        dayNumber: state.currentDay,
+        date: cand.date,
+        matchTime: cand.matchTime,
+        league: 'Premier League',
+        homeTeam: cand.homeTeam,
+        awayTeam: cand.awayTeam,
+        market: cand.market,
+        selection: cand.market,
+        odds: cand.odds,
+        stake: cand.stake,
+        result: 'PENDING',
+        profit: 0,
+        loss: 0,
+        netPnL: 0,
+        bankrollAfter: fin.netBettingPnL,
+        notes: cand.notes,
+      };
+      onRecordMatch(newMatch);
+      if (onDeleteCandidate) {
+        onDeleteCandidate(cand.id);
+      }
+    }
+
+    const slipRecord: MatchRecord = {
+      id: cand.id,
+      dayNumber: state.currentDay,
+      date: cand.date,
+      matchTime: cand.matchTime,
+      league: 'Premier League',
+      homeTeam: cand.homeTeam,
+      awayTeam: cand.awayTeam,
+      market: cand.market,
+      selection: cand.market,
+      odds: cand.odds,
+      stake: cand.stake,
+      result: 'PENDING',
+      profit: 0,
+      loss: 0,
+      netPnL: 0,
+      bankrollAfter: fin.netBettingPnL,
+      notes: cand.notes,
+    };
+    setActiveSlipMatch(slipRecord);
+    setIsNewSlip(true);
+
+    setSuccessBanner(
+      `Bet Confirmed! ${cand.homeTeam} vs ${cand.awayTeam} (${cand.market}) is now an active pending bet on Dashboard.`
+    );
+    setTimeout(() => setSuccessBanner(null), 4000);
+  };
+
+  const handleSettleCandidateDirectly = (cand: CandidateMatch, res: 'WIN' | 'LOSS' | 'VOID') => {
+    const profit = res === 'WIN' ? Number((cand.stake * (cand.odds - 1)).toFixed(2)) : 0;
+    const loss = res === 'LOSS' ? cand.stake : 0;
+    const netPnL = res === 'WIN' ? profit : (res === 'LOSS' ? -loss : 0);
+
+    const record: MatchRecord = {
+      id: cand.id,
+      dayNumber: state.currentDay,
+      date: cand.date,
+      matchTime: cand.matchTime,
+      league: 'Premier League',
+      homeTeam: cand.homeTeam,
+      awayTeam: cand.awayTeam,
+      market: cand.market,
+      selection: cand.market,
+      odds: cand.odds,
+      stake: cand.stake,
+      result: res,
+      profit,
+      loss,
+      netPnL,
+      bankrollAfter: fin.netBettingPnL,
+      notes: cand.notes,
+    };
+    onRecordMatch(record);
+    if (onDeleteCandidate) {
+      onDeleteCandidate(cand.id);
+    }
+    setSuccessBanner(`Selection settled as ${res} and added to history.`);
+    setTimeout(() => setSuccessBanner(null), 3500);
+  };
+
+  const handleLoadCandidateIntoForm = (cand: CandidateMatch) => {
+    setHomeTeam(cand.homeTeam);
+    setAwayTeam(cand.awayTeam);
+    if (cand.date) setMatchDate(cand.date);
+    if (cand.matchTime) setMatchTime(cand.matchTime);
+    setLeague('Premier League');
+    setMarket(cand.market);
+    setOddsStr(String(cand.odds || '1.85'));
+    setStakeStr(String(cand.stake || '100'));
+    setNotes(cand.notes || '');
+    setSuccessBanner(`Loaded ${cand.homeTeam} vs ${cand.awayTeam} (${cand.market}) into entry form.`);
+    setTimeout(() => setSuccessBanner(null), 3500);
+
+    const formEl = document.getElementById('new-match-entry-card');
+    if (formEl) {
+      formEl.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleInlineUpdateCandidateStake = (cand: CandidateMatch, val: string) => {
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0 && onUpdateCandidate) {
+      onUpdateCandidate({ ...cand, stake: num });
+    }
+  };
+
+  const handleInlineUpdateCandidateOdds = (cand: CandidateMatch, val: string) => {
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 1 && onUpdateCandidate) {
+      onUpdateCandidate({ ...cand, odds: num });
+    }
+  };
 
   // Auto-save form inputs draft whenever any field changes
   useEffect(() => {
@@ -335,6 +469,211 @@ export const DailyTaskView: React.FC<DailyTaskViewProps> = ({
           <span>{successBanner}</span>
         </div>
       )}
+
+      {/* 1. CANDIDATE SELECTIONS FROM MATCH COMPARISON (PRELIMINARY QUEUE) */}
+      <div className="solid-card p-6 border-2 border-red-200 bg-white rounded-2xl shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-red-100">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-red-50 text-red-600 rounded-xl border border-red-200">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                  Selected Markets from Comparison
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 font-mono">
+                  {candidates.length} Preliminary
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Review preliminary markets line-by-line. Confirm bet to place into Dashboard Pending Matches.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('demo_match')}
+                className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <span>Compare Matches</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {candidates.length > 0 && onClearCandidates && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Clear all preliminary candidate selections?')) {
+                    onClearCandidates();
+                    setSuccessBanner('All preliminary candidates cleared.');
+                    setTimeout(() => setSuccessBanner(null), 3000);
+                  }
+                }}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold transition-all cursor-pointer"
+                title="Clear all preliminary candidates"
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+        </div>
+
+        {candidates.length === 0 ? (
+          <div className="text-center py-8 text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+            <Activity className="w-7 h-7 text-slate-400 mx-auto opacity-50" />
+            <p>No preliminary markets selected yet</p>
+            {onNavigateTab && (
+              <button
+                onClick={() => onNavigateTab('demo_match')}
+                className="mt-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-red-600 border border-red-200 rounded-xl font-bold text-xs inline-flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <span>+ Pick Markets from Match Comparison</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {candidates.map((cand, idx) => {
+              const potentialProfit = Number((cand.stake * (cand.odds - 1)).toFixed(2));
+              return (
+                <div
+                  key={cand.id}
+                  className="p-4 rounded-2xl bg-slate-50/90 border-2 border-slate-200 hover:border-red-300 transition-all space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <div className="flex items-start sm:items-center space-x-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 font-mono font-bold text-xs border border-purple-200 shrink-0">
+                        Pick #{String(idx + 1).padStart(2, '0')}
+                      </span>
+                      <div>
+                        <div className="font-black text-slate-900 text-sm sm:text-base flex items-center space-x-1.5 flex-wrap">
+                          <span>{cand.homeTeam}</span>
+                          <span className="text-red-500 font-normal">vs</span>
+                          <span>{cand.awayTeam}</span>
+                        </div>
+                        <div className="text-slate-500 text-xs font-medium flex items-center space-x-2 flex-wrap mt-0.5">
+                          {cand.date && <span>{cand.date}</span>}
+                          {cand.matchTime && <span>• {cand.matchTime}</span>}
+                          <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 font-bold text-[11px]">
+                            {cand.market}
+                          </span>
+                          {cand.probability && (
+                            <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                              {cand.probability}% Confidence
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5 self-end sm:self-center shrink-0">
+                      {/* Confirm & Place Bet Button */}
+                      <button
+                        onClick={() => handleConfirmCandidateBet(cand)}
+                        className="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        title="Confirm bet and move to Dashboard Pending Matches"
+                      >
+                        <Ticket className="w-3.5 h-3.5" />
+                        <span>Confirm & Place Bet</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleLoadCandidateIntoForm(cand)}
+                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-xs"
+                        title="Load into entry form to customize"
+                      >
+                        <PenSquare className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Form</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (onDeleteCandidate) onDeleteCandidate(cand.id);
+                          setSuccessBanner(`Removed ${cand.homeTeam} vs ${cand.awayTeam}`);
+                          setTimeout(() => setSuccessBanner(null), 3000);
+                        }}
+                        className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 hover:border-rose-200 rounded-xl text-xs transition-all cursor-pointer shadow-xs"
+                        title="Remove candidate selection"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Inline Stake & Odds Adjuster & Quick Settle */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2.5 border-t border-slate-200 text-xs">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-slate-500 font-medium">Stake:</span>
+                        <input
+                          type="number"
+                          min="1"
+                          step="10"
+                          value={cand.stake}
+                          onChange={(e) => handleInlineUpdateCandidateStake(cand, e.target.value)}
+                          className="w-20 px-2 py-1 bg-white border border-slate-300 focus:border-red-500 rounded-lg text-xs font-mono font-bold text-slate-900 outline-hidden"
+                          title="Adjust stake"
+                        />
+                        <span className="text-slate-400 text-[11px] font-mono">{currency}</span>
+                      </div>
+
+                      <div className="flex items-center space-x-1.5">
+                        <span className="text-slate-500 font-medium">Odds:</span>
+                        <input
+                          type="number"
+                          min="1.01"
+                          step="0.05"
+                          value={cand.odds}
+                          onChange={(e) => handleInlineUpdateCandidateOdds(cand, e.target.value)}
+                          className="w-18 px-2 py-1 bg-white border border-slate-300 focus:border-red-500 rounded-lg text-xs font-mono font-bold text-emerald-600 outline-hidden"
+                          title="Adjust odds"
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-1">
+                        <span className="text-slate-500 font-medium">To Win:</span>
+                        <span className="font-mono font-black text-emerald-600">
+                          +{formatMoney(potentialProfit, currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Quick direct settle buttons */}
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <button
+                        onClick={() => handleSettleCandidateDirectly(cand, 'WIN')}
+                        className="py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold rounded-xl text-[11px] flex items-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        title="Directly settle as WIN"
+                      >
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>WIN</span>
+                      </button>
+                      <button
+                        onClick={() => handleSettleCandidateDirectly(cand, 'LOSS')}
+                        className="py-1.5 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-bold rounded-xl text-[11px] flex items-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        title="Directly settle as LOSS"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        <span>LOSS</span>
+                      </button>
+                      <button
+                        onClick={() => handleSettleCandidateDirectly(cand, 'VOID')}
+                        className="py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold rounded-xl text-[11px] flex items-center space-x-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                        title="Directly settle as VOID"
+                      >
+                        <Ban className="w-3 h-3" />
+                        <span>VOID</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* PENDING / RUNNING MATCHES SECTION */}
       <div className="solid-card p-6 border border-red-100 bg-white rounded-2xl shadow-sm space-y-4">

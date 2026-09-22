@@ -136,10 +136,25 @@ export interface MatchweekCategoryRanking {
 
 export type CategoryRankingsMap = Record<number, MatchweekCategoryRanking>;
 
+export interface CandidateMatch {
+  id: string;
+  createdAt: string;
+  date: string;
+  matchTime?: string;
+  homeTeam: string;
+  awayTeam: string;
+  market: string;
+  odds: number;
+  stake: number;
+  notes?: string;
+  probability?: number;
+}
+
 export interface AppState {
   currentDay: number; // Sequence counter (1 to 30)
   currentMatchweek: number; // Matchweek 1 to 38
   matchHistory: MatchRecord[];
+  candidateMatches?: CandidateMatch[]; // Preliminary selections in Select Match
   eplMatches: EPLMatchEvent[];
   marketRecords?: MarketRecordEntry[];
   preMatchNotes?: Record<string, TeamPreMatchNote>;

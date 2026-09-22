@@ -10,6 +10,7 @@ import {
 } from '../utils/pdfGenerator';
 import { TeamCrest } from './TeamCrest';
 import { ReportPreviewModal } from './ReportPreviewModal';
+import { BetSlipModal } from './BetSlipModal';
 import {
   Trophy,
   TrendingUp,
@@ -29,6 +30,9 @@ import {
   Check,
   TrendingDown,
   Sparkles,
+  Trash2,
+  Ticket,
+  PenSquare,
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -36,15 +40,22 @@ interface DashboardViewProps {
   setActiveTab: (tab: ActiveTab) => void;
   onRecordMatch?: (match: MatchRecord) => void;
   onUpdateMatchStatus?: (id: string, result: 'WIN' | 'LOSS' | 'VOID') => void;
+  onDeleteMatch?: (id: string) => void;
+  onUpdateMatch?: (match: MatchRecord) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   state,
   setActiveTab,
-  onUpdateMatchStatus
+  onUpdateMatchStatus,
+  onDeleteMatch,
+  onUpdateMatch,
 }) => {
   const fin = calculateFinancials(state);
   const currency = state.settings.currency || 'BDT';
+
+  const [viewingSlipMatch, setViewingSlipMatch] = useState<MatchRecord | null>(null);
+  const [slipInitialEditing, setSlipInitialEditing] = useState<boolean>(false);
 
   // 1. TOP 5 TEAMS (Calculated strictly from user-recorded team match data)
   const standings = calculateEPLStandings(state.eplMatches || []);
@@ -486,9 +497,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                         <span className="text-red-600 font-extrabold">{item.market}</span>
                         <span className="hidden sm:inline">•</span>
-                        <span>Odds: <strong className="font-mono text-slate-800">@{item.odds.toFixed(2)}</strong></span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewingSlipMatch(item);
+                            setSlipInitialEditing(true);
+                          }}
+                          className="hover:underline hover:text-red-600 cursor-pointer text-left"
+                          title="Click to edit odds"
+                        >
+                          Odds: <strong className="font-mono text-slate-800">@{item.odds.toFixed(2)}</strong>
+                        </button>
                         <span className="hidden sm:inline">•</span>
-                        <span>Stake: <strong className="font-mono text-slate-800">{formatMoney(item.stake, currency)}</strong></span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewingSlipMatch(item);
+                            setSlipInitialEditing(true);
+                          }}
+                          className="hover:underline hover:text-red-600 cursor-pointer text-left"
+                          title="Click to edit stake"
+                        >
+                          Stake: <strong className="font-mono text-slate-800">{formatMoney(item.stake, currency)}</strong>
+                        </button>
                       </div>
                     </div>
 
@@ -497,24 +528,61 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         Pending
                       </span>
 
-                      {onUpdateMatchStatus && (
-                        <div className="flex items-center space-x-1">
+                      <div className="flex items-center space-x-1">
+                        {/* Edit Odds & Stake */}
+                        {onUpdateMatch && (
                           <button
-                            onClick={() => onUpdateMatchStatus(item.id, 'WIN')}
-                            className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 cursor-pointer"
-                            title="Mark as Won"
+                            onClick={() => {
+                              setViewingSlipMatch(item);
+                              setSlipInitialEditing(true);
+                            }}
+                            className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg border border-slate-200 cursor-pointer transition-colors"
+                            title="Edit Odds & Stake"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <PenSquare className="w-3.5 h-3.5" />
                           </button>
+                        )}
+
+                        {/* View & Download Slip */}
+                        <button
+                          onClick={() => {
+                            setViewingSlipMatch(item);
+                            setSlipInitialEditing(false);
+                          }}
+                          className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-200 cursor-pointer transition-colors"
+                          title="View & Download Bet Slip"
+                        >
+                          <Ticket className="w-3.5 h-3.5" />
+                        </button>
+
+                        {onUpdateMatchStatus && (
+                          <>
+                            <button
+                              onClick={() => onUpdateMatchStatus(item.id, 'WIN')}
+                              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg border border-emerald-200 cursor-pointer"
+                              title="Mark as Won"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => onUpdateMatchStatus(item.id, 'LOSS')}
+                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 cursor-pointer"
+                              title="Mark as Lost"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                        {onDeleteMatch && (
                           <button
-                            onClick={() => onUpdateMatchStatus(item.id, 'LOSS')}
-                            className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 cursor-pointer"
-                            title="Mark as Lost"
+                            onClick={() => onDeleteMatch(item.id)}
+                            className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg border border-slate-200 hover:border-rose-200 cursor-pointer transition-colors"
+                            title="Delete Match"
                           >
-                            <XCircle className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -748,6 +816,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           title="Market Win & Loss Performance Report"
           htmlContent={printableHtml}
           downloadFilename={`EPL_Market_Win_Loss_Report_${new Date().toISOString().split('T')[0]}.html`}
+        />
+      )}
+
+      {/* Bet Slip Viewer & Re-Editor Modal */}
+      {viewingSlipMatch && (
+        <BetSlipModal
+          match={viewingSlipMatch}
+          currency={currency}
+          onClose={() => setViewingSlipMatch(null)}
+          onUpdateMatch={(updated) => {
+            if (onUpdateMatch) onUpdateMatch(updated);
+            setViewingSlipMatch(updated);
+          }}
+          initialEditing={slipInitialEditing}
         />
       )}
     </div>

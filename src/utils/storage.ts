@@ -20,6 +20,7 @@ export const INITIAL_STATE: AppState = {
   currentDay: 1,
   currentMatchweek: 1,
   matchHistory: [],
+  candidateMatches: [],
   eplMatches: [],
   marketRecords: [],
   preMatchNotes: {},
@@ -80,6 +81,7 @@ export const normalizeLoadedState = (parsed: any): AppState => {
     currentDay: typeof parsed.currentDay === 'number' && parsed.currentDay >= 1 ? parsed.currentDay : 1,
     currentMatchweek: typeof parsed.currentMatchweek === 'number' ? parsed.currentMatchweek : (settings.activeMatchweek || 1),
     matchHistory: normalizedHistory,
+    candidateMatches: Array.isArray(parsed.candidateMatches) ? parsed.candidateMatches : [],
     eplMatches: sanitizeAndDeduplicateMatches(Array.isArray(parsed.eplMatches) ? parsed.eplMatches : []),
     marketRecords: Array.isArray(parsed.marketRecords) ? parsed.marketRecords : [],
     preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : {},
@@ -94,6 +96,7 @@ export const hasSavedStateData = (state: AppState | null | undefined): boolean =
   if (!state) return false;
   return (
     (Array.isArray(state.matchHistory) && state.matchHistory.length > 0) ||
+    (Array.isArray(state.candidateMatches) && state.candidateMatches.length > 0) ||
     (Array.isArray(state.eplMatches) && state.eplMatches.length > 0) ||
     (Array.isArray(state.marketRecords) && state.marketRecords.length > 0) ||
     (typeof state.currentDay === 'number' && state.currentDay > 1) ||
