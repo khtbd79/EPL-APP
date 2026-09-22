@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppState, EPLMatchEvent, ActiveTab } from '../types';
 import { ALL_EPL_20_TEAMS, normalizeTeamName, calculateEPLStandings } from '../utils/teamData';
 import { getStoredDraft, setStoredDraft } from '../utils/storage';
@@ -37,7 +37,7 @@ export const getTeamStadium = (teamName: string): string => {
 interface TeamDataViewProps {
   state: AppState;
   onSaveEplMatch: (match: EPLMatchEvent) => void;
-  onDeleteEplMatch: (id: string) => void;
+  onDeleteEplMatch: (id: string, matchweek?: number, homeTeam?: string, awayTeam?: string) => void;
   onBatchSaveEplMatches?: (matches: EPLMatchEvent[]) => void;
   onClearMatchweekMatches?: (matchweek: number) => void;
   onNavigateTab?: (tab: ActiveTab) => void;
@@ -101,13 +101,19 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
   // Working local matches for the active matchweek to allow smooth editing
   const [rows, setRows] = useState<EditableMatchRow[]>([]);
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
+  const isLocalActionRef = useRef(false);
 
   // Sync rows whenever selectedWeek changes or new matches arrive in state, respecting in-progress drafts
   useEffect(() => {
+    if (isLocalActionRef.current) {
+      isLocalActionRef.current = false;
+      return;
+    }
+
     const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
     const storedDraft = getStoredDraft<EditableMatchRow[] | null>(draftKey, null);
 
-    if (storedDraft && Array.isArray(storedDraft) && storedDraft.length > 0) {
+    if (storedDraft !== null && Array.isArray(storedDraft)) {
       setRows(storedDraft);
       return;
     }
@@ -270,12 +276,13 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     );
   };
 
-  // Add a new single match row with standings-based defaults
-  const handleAddNewRow = () => {
+  // Add or insert a new single match slot at ANY position among the slots
+  const handleInsertRowAt = (insertIndex: number = rows.length) => {
+    isLocalActionRef.current = true;
     const usedTeams = new Set<string>();
     rows.forEach((r) => {
-      usedTeams.add(normalizeTeamName(r.homeTeam).toLowerCase());
-      usedTeams.add(normalizeTeamName(r.awayTeam).toLowerCase());
+      if (r.homeTeam) usedTeams.add(normalizeTeamName(r.homeTeam).toLowerCase());
+      if (r.awayTeam) usedTeams.add(normalizeTeamName(r.awayTeam).toLowerCase());
     });
 
     const availableTeams = standingsTeams.filter(
@@ -288,24 +295,40 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       standingsTeams.find((t) => t.name !== defaultHome)?.name ||
       'Chelsea';
 
+    const dateStr = masterDate || new Date().toISOString().split('T')[0];
+    const timeStr = masterTime || '20:00 BST';
+
     const newRow: EditableMatchRow = {
-      id: `mw${selectedWeek}_custom_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: `mw${selectedWeek}_slot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       matchweek: selectedWeek,
       homeTeam: defaultHome,
       awayTeam: defaultAway,
       homeScore: '',
       awayScore: '',
-      date: masterDate || new Date().toISOString().split('T')[0],
-      time: masterTime || '20:00 BST',
+      date: dateStr,
+      time: timeStr,
       status: 'UPCOMING',
       isDirty: true,
     };
 
-    setRows((prev) => [...prev, newRow]);
-    setToastMessage('Match slot added.');
+    setRows((prev) => {
+      const next = [...prev];
+      const safeIndex = Math.max(0, Math.min(insertIndex, next.length));
+      next.splice(safeIndex, 0, newRow);
+      const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+      setStoredDraft(draftKey, next);
+      return next;
+    });
+
+    setToastMessage(`Match slot created at Position #${Math.min(insertIndex + 1, rows.length + 1)}.`);
+  };
+
+  const handleAddNewRow = () => {
+    handleInsertRowAt(rows.length);
   };
 
   const generate10SlotsInternal = () => {
+    isLocalActionRef.current = true;
     const new10Rows: EditableMatchRow[] = [];
     const dateStr = masterDate || new Date().toISOString().split('T')[0];
     const timeStr = masterTime || '20:00 BST';
@@ -315,7 +338,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       const awayTeam = standingsTeams[i * 2 + 1]?.name || 'Chelsea';
 
       new10Rows.push({
-        id: `mw${selectedWeek}_slot_${i + 1}_${Date.now()}`,
+        id: `mw${selectedWeek}_slot_${i + 1}_${Date.now()}_${i}`,
         matchweek: selectedWeek,
         homeTeam,
         awayTeam,
@@ -329,6 +352,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
     }
 
     setRows(new10Rows);
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    setStoredDraft(draftKey, new10Rows);
     setToastMessage(`Generated 10 match slots for Matchweek ${selectedWeek} (${dateStr} ${timeStr}).`);
   };
 
@@ -363,6 +388,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       return;
     }
 
+    isLocalActionRef.current = true;
     const hScore = row.homeScore.trim() !== '' ? Number(row.homeScore) : 0;
     const aScore = row.awayScore.trim() !== '' ? Number(row.awayScore) : 0;
     const isPlayed = row.homeScore.trim() !== '' && row.awayScore.trim() !== '';
@@ -389,9 +415,10 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
     onSaveEplMatch(matchToSave);
 
-    setRows((prev) =>
-      prev.map((r, i) => (i === index ? { ...r, isDirty: false } : r))
-    );
+    const nextRows = rows.map((r, i) => (i === index ? { ...r, isDirty: false } : r));
+    setRows(nextRows);
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    setStoredDraft(draftKey, nextRows);
 
     setToastMessage(`Match #${index + 1} (${row.homeTeam} vs ${row.awayTeam}) saved.`);
   };
@@ -414,6 +441,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       }
     }
 
+    isLocalActionRef.current = true;
     const matchesToSave: EPLMatchEvent[] = rows.map((row) => {
       const hScore = row.homeScore.trim() !== '' ? Number(row.homeScore) : 0;
       const aScore = row.awayScore.trim() !== '' ? Number(row.awayScore) : 0;
@@ -446,17 +474,43 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       matchesToSave.forEach((m) => onSaveEplMatch(m));
     }
 
-    setRows((prev) => prev.map((r) => ({ ...r, isDirty: false })));
-    try {
-      localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
-    } catch (_) {}
+    const nextRows = rows.map((r) => ({ ...r, isDirty: false }));
+    setRows(nextRows);
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    setStoredDraft(draftKey, nextRows);
     setToastMessage(`Matchweek ${selectedWeek} matches saved.`);
   };
 
   // Delete row
   const handleDeleteRow = (id: string, index: number) => {
-    onDeleteEplMatch(id);
-    setRows((prev) => prev.filter((_, i) => i !== index));
+    isLocalActionRef.current = true;
+    const rowToDelete = rows[index];
+
+    // 1. Delete from global state
+    if (rowToDelete) {
+      onDeleteEplMatch(
+        id,
+        rowToDelete.matchweek,
+        rowToDelete.homeTeam,
+        rowToDelete.awayTeam
+      );
+    } else {
+      onDeleteEplMatch(id);
+    }
+
+    // 2. Remove from local rows
+    const nextRows = rows.filter((_, i) => i !== index);
+    setRows(nextRows);
+
+    // 3. Immediately sync draft
+    const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+    setStoredDraft(draftKey, nextRows);
+
+    // 4. If all rows deleted for this matchweek, also trigger week clear
+    if (nextRows.length === 0 && onClearMatchweekMatches) {
+      onClearMatchweekMatches(selectedWeek);
+    }
+
     setToastMessage(`Match #${index + 1} deleted.`);
   };
 
@@ -469,14 +523,14 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       confirmLabel: 'Reset Week',
       variant: 'danger',
       onConfirm: () => {
-        try {
-          localStorage.removeItem(`btts_team_data_draft_week_${selectedWeek}`);
-        } catch (_) {}
+        isLocalActionRef.current = true;
+        const draftKey = `btts_team_data_draft_week_${selectedWeek}`;
+        setStoredDraft(draftKey, []);
 
         if (onClearMatchweekMatches) {
           onClearMatchweekMatches(selectedWeek);
         } else {
-          rows.forEach((r) => onDeleteEplMatch(r.id));
+          rows.forEach((r) => onDeleteEplMatch(r.id, r.matchweek, r.homeTeam, r.awayTeam));
         }
 
         setRows([]);
@@ -601,10 +655,32 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
             <button
               onClick={handleAddNewRow}
               className="py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap"
+              title="Add match slot at end"
             >
               <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>Add Match</span>
             </button>
+
+            <div className="flex items-center space-x-1 bg-white border border-slate-300 rounded-xl px-2 py-1 shadow-2xs">
+              <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Insert:</span>
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value !== '') {
+                    handleInsertRowAt(Number(e.target.value));
+                    e.target.value = '';
+                  }
+                }}
+                className="bg-transparent text-xs font-bold text-slate-800 cursor-pointer outline-none"
+              >
+                <option value="" disabled>Position...</option>
+                {Array.from({ length: rows.length + 1 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i === 0 ? 'Position #1 (Top)' : i === rows.length ? `Position #${i + 1} (End)` : `Position #${i + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <button
               onClick={handleGenerate10Slots}
@@ -776,18 +852,32 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
               (row.homeScore.trim() === '' && row.awayScore.trim() !== '');
 
             return (
-              <div
-                key={row.id || index}
-                className={`rounded-2xl border transition-all p-4 sm:p-5 shadow-xs border-l-[6px] ${
-                  isPlayed
-                    ? 'bg-emerald-50/70 border-emerald-400 border-l-emerald-600 ring-2 ring-emerald-200/60'
-                    : isPartiallyFilled
-                    ? 'bg-amber-50/50 border-amber-300 border-l-amber-500 ring-2 ring-amber-200/50'
-                    : row.isDirty
-                    ? 'bg-white border-amber-300 border-l-amber-400 ring-2 ring-amber-100'
-                    : 'bg-white border-slate-200 hover:border-slate-300 border-l-slate-300'
-                }`}
-              >
+              <React.Fragment key={row.id || index}>
+                {index === 0 && (
+                  <div className="flex items-center justify-center -my-1">
+                    <button
+                      type="button"
+                      onClick={() => handleInsertRowAt(0)}
+                      className="px-3 py-1 bg-white hover:bg-red-50 text-slate-500 hover:text-red-700 border border-dashed border-slate-300 hover:border-red-300 rounded-full text-[11px] font-bold flex items-center space-x-1 shadow-2xs transition-all cursor-pointer"
+                      title="Insert a match slot at Position #1"
+                    >
+                      <Plus className="w-3 h-3 text-red-600" />
+                      <span>Insert Slot #1 (Top)</span>
+                    </button>
+                  </div>
+                )}
+
+                <div
+                  className={`rounded-2xl border transition-all p-4 sm:p-5 shadow-xs border-l-[6px] ${
+                    isPlayed
+                      ? 'bg-emerald-50/70 border-emerald-400 border-l-emerald-600 ring-2 ring-emerald-200/60'
+                      : isPartiallyFilled
+                      ? 'bg-amber-50/50 border-amber-300 border-l-amber-500 ring-2 ring-amber-200/50'
+                      : row.isDirty
+                      ? 'bg-white border-amber-300 border-l-amber-400 ring-2 ring-amber-100'
+                      : 'bg-white border-slate-200 hover:border-slate-300 border-l-slate-300'
+                  }`}
+                >
                 {/* Match Header Bar */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-100 text-xs gap-2">
                   <div className="flex items-center space-x-2 flex-wrap gap-y-1">
@@ -997,6 +1087,17 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
                   <div className="flex items-center space-x-2">
                     <button
+                      type="button"
+                      onClick={() => handleInsertRowAt(index + 1)}
+                      className="py-1.5 px-2.5 rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
+                      title={`Insert a new slot directly below Match #${index + 1}`}
+                    >
+                      <Plus className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                      <span>Insert Below</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleDeleteRow(row.id, index)}
                       className="py-1.5 px-3 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 text-xs font-semibold flex items-center space-x-1 transition-all cursor-pointer"
                       title="Delete Match"
@@ -1006,6 +1107,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => handleSaveSingleMatch(row, index)}
                       className={`py-1.5 px-3.5 rounded-xl text-xs font-black flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer ${
                         row.isDirty
@@ -1019,6 +1121,20 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Insert Divider below this card */}
+              <div className="flex items-center justify-center -my-1">
+                <button
+                  type="button"
+                  onClick={() => handleInsertRowAt(index + 1)}
+                  className="px-3 py-1 bg-white hover:bg-red-50 text-slate-500 hover:text-red-700 border border-dashed border-slate-300 hover:border-red-300 rounded-full text-[11px] font-bold flex items-center space-x-1 shadow-2xs transition-all cursor-pointer"
+                  title={`Insert a match slot at Position #${index + 2}`}
+                >
+                  <Plus className="w-3 h-3 text-red-600" />
+                  <span>Insert Slot #{index + 2}</span>
+                </button>
+              </div>
+            </React.Fragment>
             );
           })}
 
@@ -1028,14 +1144,36 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
               Total: <strong className="text-slate-900">{rows.length} Matches</strong>
             </div>
 
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2.5 flex-wrap">
               <button
                 onClick={handleAddNewRow}
                 className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
+                title="Add match slot at end"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Match</span>
               </button>
+
+              <div className="flex items-center space-x-1 bg-slate-50 border border-slate-300 rounded-xl px-2 py-1 shadow-2xs">
+                <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Insert:</span>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value !== '') {
+                      handleInsertRowAt(Number(e.target.value));
+                      e.target.value = '';
+                    }
+                  }}
+                  className="bg-transparent text-xs font-bold text-slate-800 cursor-pointer outline-none"
+                >
+                  <option value="" disabled>Position...</option>
+                  {Array.from({ length: rows.length + 1 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i === 0 ? 'Position #1 (Top)' : i === rows.length ? `Position #${i + 1} (End)` : `Position #${i + 1}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <button
                 onClick={handleSaveAllMatches}

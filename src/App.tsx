@@ -298,12 +298,32 @@ export default function App() {
     handleSaveEplMatch(updatedMatch);
   };
 
-  const handleDeleteEplMatch = (id: string) => {
+  const handleDeleteEplMatch = (
+    id: string,
+    matchweek?: number,
+    homeTeam?: string,
+    awayTeam?: string
+  ) => {
     updateAndSaveState((prev) => {
       const matches = prev.eplMatches || [];
       return {
         ...prev,
-        eplMatches: matches.filter((m) => m.id !== id),
+        eplMatches: matches.filter((m) => {
+          if (m.id === id) return false;
+          if (matchweek && homeTeam && awayTeam) {
+            const isMatchweek = Number(m.matchweek) === Number(matchweek);
+            const isHome =
+              normalizeTeamName(m.homeTeam).toLowerCase().trim() ===
+              normalizeTeamName(homeTeam).toLowerCase().trim();
+            const isAway =
+              normalizeTeamName(m.awayTeam).toLowerCase().trim() ===
+              normalizeTeamName(awayTeam).toLowerCase().trim();
+            if (isMatchweek && isHome && isAway) {
+              return false;
+            }
+          }
+          return true;
+        }),
       };
     });
   };

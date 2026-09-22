@@ -13,8 +13,11 @@ export const ResetDataModal: React.FC<ResetDataModalProps> = ({
   onClose,
   onConfirmReset,
 }) => {
+  const [confirmText, setConfirmText] = useState('');
+
   useEffect(() => {
     if (isOpen) {
+      setConfirmText('');
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => {
@@ -25,7 +28,10 @@ export const ResetDataModal: React.FC<ResetDataModalProps> = ({
 
   if (!isOpen || typeof document === 'undefined') return null;
 
+  const isConfirmed = confirmText.trim().toUpperCase() === 'RESET';
+
   const handleReset = () => {
+    if (!isConfirmed) return;
     onConfirmReset();
     onClose();
   };
@@ -61,6 +67,22 @@ export const ResetDataModal: React.FC<ResetDataModalProps> = ({
           </p>
         </div>
 
+        <div>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && isConfirmed) {
+                handleReset();
+              }
+            }}
+            placeholder="Type RESET to confirm"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 text-center font-mono font-bold tracking-widest text-sm uppercase outline-none transition-all"
+            autoFocus
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             type="button"
@@ -72,7 +94,12 @@ export const ResetDataModal: React.FC<ResetDataModalProps> = ({
           <button
             type="button"
             onClick={handleReset}
-            className="py-2.5 px-4 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-md transition-all cursor-pointer"
+            disabled={!isConfirmed}
+            className={`py-2.5 px-4 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 transition-all ${
+              isConfirmed
+                ? 'bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-md cursor-pointer'
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+            }`}
           >
             <Trash2 className="w-4 h-4" />
             <span>Reset All Data</span>
