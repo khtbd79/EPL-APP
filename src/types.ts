@@ -269,9 +269,11 @@ export type ActiveTab =
   | 'all_markets'
   | 'demo_match'
   | 'select_match'
+  | 'overview'
   | 'report'
   | 'settings'
   // Legacy & alias mappings
+  | 'over_view'
   | 'bankroll'
   | 'top_teams'
   | 'market_trends'

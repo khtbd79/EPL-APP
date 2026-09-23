@@ -53,6 +53,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
     { id: 'all_markets' as ActiveTab, label: 'All Markets', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
     { id: 'demo_match' as ActiveTab, label: 'Match Comparison', icon: <Target className="w-5 h-5" />, color: 'emerald' },
     { id: 'select_match' as ActiveTab, label: 'Select Match', icon: <Trophy className="w-5 h-5" />, color: 'red' },
+    { id: 'overview' as ActiveTab, label: 'OVER VIEW', icon: <Layers className="w-5 h-5" />, color: 'sky' },
     { id: 'report' as ActiveTab, label: 'Report & Records', icon: <FileText className="w-5 h-5" />, color: 'cyan' },
     { id: 'settings' as ActiveTab, label: 'Settings & Backup', icon: <SettingsIcon className="w-5 h-5" />, color: 'purple' },
   ];
@@ -213,12 +214,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
           <button
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
             className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets'].includes(activeTab)
+              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
                 ? 'font-bold'
                 : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
             }`}
             style={
-              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets'].includes(activeTab)
+              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
                 ? { color: themeConfig.primaryColor }
                 : undefined
             }

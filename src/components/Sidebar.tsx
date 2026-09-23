@@ -63,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'all_markets', label: 'All Markets', icon: <TrendingUp className="w-4 h-4 text-emerald-500" /> },
     { id: 'demo_match', label: 'Match Comparison', icon: <Target className="w-4 h-4" /> },
     { id: 'select_match', label: 'Select Match', icon: <Trophy className="w-4 h-4 text-red-600" /> },
+    { id: 'overview', label: 'OVER VIEW', icon: <Layers className="w-4 h-4 text-sky-500" /> },
     { id: 'report', label: 'Report', icon: <FileText className="w-4 h-4" /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-4 h-4" /> },
   ];
@@ -76,6 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           (item.id === 'all_markets' && activeTab === 'market_trends') ||
           (item.id === 'demo_match' && activeTab === 'match_select') ||
           (item.id === 'select_match' && activeTab === 'daily_task') ||
+          (item.id === 'overview' && (activeTab === 'overview' || activeTab === 'over_view')) ||
           (item.id === 'report' && (activeTab === 'reports' || activeTab === 'history' || activeTab === 'saved_ledger')) ||
           (item.id === 'settings' && activeTab === 'backup');
         return (

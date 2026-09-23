@@ -25,6 +25,7 @@ import { MarketTrendsView } from './components/MarketTrendsView';
 import { StandingsView } from './components/StandingsView';
 import { TeamDataView } from './components/TeamDataView';
 import { AllMarketsView } from './components/AllMarketsView';
+import { OverviewView } from './components/OverviewView';
 import { ReportView } from './components/ReportView';
 
 const VALID_TABS: ActiveTab[] = [
@@ -34,6 +35,8 @@ const VALID_TABS: ActiveTab[] = [
   'all_markets',
   'demo_match',
   'select_match',
+  'overview',
+  'over_view',
   'report',
   'settings',
   'top_teams',
@@ -628,6 +631,14 @@ export default function App() {
               onDeleteCandidate={handleDeleteCandidateMatch}
               onUpdateCandidate={handleUpdateCandidateMatch}
               onClearCandidates={handleClearCandidates}
+            />
+          )}
+
+          {(activeTab === 'overview' || activeTab === 'over_view') && (
+            <OverviewView
+              state={state}
+              onDeleteMatch={handleDeleteMatch}
+              onNavigateTab={setActiveTab}
             />
           )}
 
