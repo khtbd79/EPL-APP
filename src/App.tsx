@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking, CandidateMatch } from './types';
+import { ActiveTab, AppState, AppSettings, AppLayoutTheme, MatchRecord, EPLMatchEvent, MarketRecordEntry, MatchweekCategoryRanking, CandidateMatch, MoneyTransaction } from './types';
 import { loadState, saveState, clearAllData, getStoredDraft, setStoredDraft, normalizeLoadedState, hasSavedStateData } from './utils/storage';
 import { normalizeTeamName, sanitizeAndDeduplicateMatches } from './utils/teamData';
 import { loadStateFromIndexedDB, saveStateToIndexedDB } from './utils/indexedDbStorage';
@@ -26,6 +26,7 @@ import { StandingsView } from './components/StandingsView';
 import { TeamDataView } from './components/TeamDataView';
 import { AllMarketsView } from './components/AllMarketsView';
 import { ReportView } from './components/ReportView';
+import { MoneyManagementView } from './components/MoneyManagementView';
 
 const VALID_TABS: ActiveTab[] = [
   'dashboard',
@@ -34,8 +35,10 @@ const VALID_TABS: ActiveTab[] = [
   'all_markets',
   'demo_match',
   'select_match',
+  'money_management',
   'report',
   'settings',
+  'bankroll',
   'top_teams',
   'market_trends',
   'match_select',
@@ -349,6 +352,21 @@ export default function App() {
     }));
   };
 
+  // Handlers for Money Management & Bankroll Transactions
+  const handleAddMoneyTransaction = (tx: MoneyTransaction) => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      moneyTransactions: [tx, ...(prev.moneyTransactions || [])],
+    }));
+  };
+
+  const handleDeleteMoneyTransaction = (id: string) => {
+    updateAndSaveState((prev) => ({
+      ...prev,
+      moneyTransactions: (prev.moneyTransactions || []).filter((tx) => tx.id !== id),
+    }));
+  };
+
   // Handlers for EPL 20 Teams & Matchweek Match Center
   const handleAddEplMatch = (match: EPLMatchEvent) => {
     handleSaveEplMatch(match);
@@ -628,6 +646,15 @@ export default function App() {
               onDeleteCandidate={handleDeleteCandidateMatch}
               onUpdateCandidate={handleUpdateCandidateMatch}
               onClearCandidates={handleClearCandidates}
+            />
+          )}
+
+          {(activeTab === 'money_management' || activeTab === 'bankroll') && (
+            <MoneyManagementView
+              state={state}
+              onAddTransaction={handleAddMoneyTransaction}
+              onDeleteTransaction={handleDeleteMoneyTransaction}
+              onNavigateTab={setActiveTab}
             />
           )}
 
