@@ -150,25 +150,11 @@ export interface CandidateMatch {
   probability?: number;
 }
 
-export type MoneyTransactionType = 'DEPOSIT' | 'WITHDRAW';
-
-export interface MoneyTransaction {
-  id: string;
-  type: MoneyTransactionType;
-  amount: number;
-  date: string; // YYYY-MM-DD
-  time?: string;
-  method?: string; // Cash, Bank, bKash, Nagad, etc.
-  note?: string;
-  createdAt: string;
-}
-
 export interface AppState {
   currentDay: number; // Sequence counter (1 to 30)
   currentMatchweek: number; // Matchweek 1 to 38
   matchHistory: MatchRecord[];
   candidateMatches?: CandidateMatch[]; // Preliminary selections in Select Match
-  moneyTransactions?: MoneyTransaction[]; // Deposits and Withdrawals for Money Management
   eplMatches: EPLMatchEvent[];
   marketRecords?: MarketRecordEntry[];
   preMatchNotes?: Record<string, TeamPreMatchNote>;
@@ -283,7 +269,6 @@ export type ActiveTab =
   | 'all_markets'
   | 'demo_match'
   | 'select_match'
-  | 'money_management'
   | 'report'
   | 'settings'
   // Legacy & alias mappings

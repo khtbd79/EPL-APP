@@ -21,7 +21,6 @@ export const INITIAL_STATE: AppState = {
   currentMatchweek: 1,
   matchHistory: [],
   candidateMatches: [],
-  moneyTransactions: [],
   eplMatches: [],
   marketRecords: [],
   preMatchNotes: {},
@@ -83,7 +82,6 @@ export const normalizeLoadedState = (parsed: any): AppState => {
     currentMatchweek: typeof parsed.currentMatchweek === 'number' ? parsed.currentMatchweek : (settings.activeMatchweek || 1),
     matchHistory: normalizedHistory,
     candidateMatches: Array.isArray(parsed.candidateMatches) ? parsed.candidateMatches : [],
-    moneyTransactions: Array.isArray(parsed.moneyTransactions) ? parsed.moneyTransactions : [],
     eplMatches: sanitizeAndDeduplicateMatches(Array.isArray(parsed.eplMatches) ? parsed.eplMatches : []),
     marketRecords: Array.isArray(parsed.marketRecords) ? parsed.marketRecords : [],
     preMatchNotes: parsed.preMatchNotes && typeof parsed.preMatchNotes === 'object' ? parsed.preMatchNotes : {},
@@ -99,7 +97,6 @@ export const hasSavedStateData = (state: AppState | null | undefined): boolean =
   return (
     (Array.isArray(state.matchHistory) && state.matchHistory.length > 0) ||
     (Array.isArray(state.candidateMatches) && state.candidateMatches.length > 0) ||
-    (Array.isArray(state.moneyTransactions) && state.moneyTransactions.length > 0) ||
     (Array.isArray(state.eplMatches) && state.eplMatches.length > 0) ||
     (Array.isArray(state.marketRecords) && state.marketRecords.length > 0) ||
     (typeof state.currentDay === 'number' && state.currentDay > 1) ||

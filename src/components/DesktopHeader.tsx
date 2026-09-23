@@ -9,7 +9,6 @@ import {
   Target,
   FileText,
   Settings as SettingsIcon,
-  Wallet,
 } from 'lucide-react';
 
 interface DesktopHeaderProps {
@@ -32,7 +31,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'all_markets', label: 'All Markets', icon: TrendingUp },
   { id: 'demo_match', label: 'Match Comparison', icon: Target },
   { id: 'select_match', label: 'Select Match', icon: Trophy },
-  { id: 'money_management', label: 'Money Management', icon: Wallet },
   { id: 'report', label: 'Report', icon: FileText },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -84,7 +82,6 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
                 (item.id === 'all_markets' && activeTab === 'market_trends') ||
                 (item.id === 'demo_match' && activeTab === 'match_select') ||
                 (item.id === 'select_match' && activeTab === 'daily_task') ||
-                (item.id === 'money_management' && (activeTab === 'money_management' || activeTab === 'bankroll')) ||
                 (item.id === 'report' && (activeTab === 'reports' || activeTab === 'history' || activeTab === 'saved_ledger')) ||
                 (item.id === 'settings' && activeTab === 'backup');
 
