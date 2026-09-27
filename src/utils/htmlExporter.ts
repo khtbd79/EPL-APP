@@ -486,57 +486,131 @@ export async function downloadWindowsDesktopZip(currentState: AppState): Promise
     // 1. Root index.html bundle
     zip.file('index.html', htmlContent);
 
-    // 2. Automated 1-Click Zero-Command Installer & EXE Generator (.bat)
+    // 2. Automated 1-Click Zero-Command Windows PC Installer (.bat)
     const autoInstallerBat = `@echo off
+setlocal EnableDelayedExpansion
+title EPL 2026 MATCH CENTER - PC Installer
 color 0A
-title EPL - PRO MATCH CENTER (PC Installer)
 cd /d "%~dp0"
 
 echo ====================================================================
-echo   EPL - PRO MATCH CENTER : 1-CLICK PC INSTALLER ^& RUNNER
+echo             EPL 2026 MATCH CENTER - WINDOWS PC INSTALLER
+echo                         1-Click Setup Wizard
 echo ====================================================================
 echo.
-echo [1/3] Searching for Windows .NET Compiler...
-
-set CSC=
-if exist "%SystemRoot%\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe" set CSC="%SystemRoot%\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe"
-if not defined CSC if exist "%SystemRoot%\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe" set CSC="%SystemRoot%\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
-if not defined CSC if exist "%SystemRoot%\\Microsoft.NET\\Framework64\\v3.5\\csc.exe" set CSC="%SystemRoot%\\Microsoft.NET\\Framework64\\v3.5\\csc.exe"
-if not defined CSC if exist "%SystemRoot%\\Microsoft.NET\\Framework\\v3.5\\csc.exe" set CSC="%SystemRoot%\\Microsoft.NET\\Framework\\v3.5\\csc.exe"
-
-if defined CSC (
-    echo [2/3] Building standalone "EPL-Manager.exe"...
-    if exist icon.ico (
-        %CSC% /nologo /target:winexe /out:"EPL-Manager.exe" /win32icon:icon.ico launcher.cs >nul 2>&1
-    ) else (
-        %CSC% /nologo /target:winexe /out:"EPL-Manager.exe" launcher.cs >nul 2>&1
-    )
-    if exist "EPL-Manager.exe" (
-        echo [OK] "EPL-Manager.exe" successfully built!
-    )
-) else (
-    echo [2/3] Configuring standalone desktop mode...
+echo [1/4] Checking installer files...
+if not exist "index.html" (
+    echo [ERROR] index.html not found!
+    echo Please make sure you have EXTRACTED the ZIP file before running.
+    echo.
+    pause
+    exit /b 1
 )
 
-echo [3/3] Creating Desktop Shortcut...
-cscript //nologo make_shortcut.vbs
+set "INSTALL_DIR=%LOCALAPPDATA%\\Programs\\EPL2026"
+echo [2/4] Installing application to:
+echo       "%INSTALL_DIR%"
+if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+
+echo [3/4] Copying files to program directory...
+copy /Y "index.html" "%INSTALL_DIR%\\index.html" >nul
+if exist "icon.ico" copy /Y "icon.ico" "%INSTALL_DIR%\\icon.ico" >nul
+if exist "icon.png" copy /Y "icon.png" "%INSTALL_DIR%\\icon.png" >nul
+
+:: Create standalone runner script inside the installed directory
+(
+echo @echo off
+echo cd /d "%%~dp0"
+echo set "HTML_PATH=%%~dp0index.html"
+echo set "FILE_URL=file:///%%HTML_PATH:\\=/%%"
+echo :: Try Microsoft Edge in standalone app window mode
+echo if exist "%%ProgramFiles(x86)%%\\Microsoft\\Edge\\Application\\msedge.exe" ^(
+echo     start "" "%%ProgramFiles(x86)%%\\Microsoft\\Edge\\Application\\msedge.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo if exist "%%ProgramFiles%%\\Microsoft\\Edge\\Application\\msedge.exe" ^(
+echo     start "" "%%ProgramFiles%%\\Microsoft\\Edge\\Application\\msedge.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo if exist "%%LocalAppData%%\\Microsoft\\Edge\\Application\\msedge.exe" ^(
+echo     start "" "%%LocalAppData%%\\Microsoft\\Edge\\Application\\msedge.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo :: Try Google Chrome in standalone app window mode
+echo if exist "%%ProgramFiles%%\\Google\\Chrome\\Application\\chrome.exe" ^(
+echo     start "" "%%ProgramFiles%%\\Google\\Chrome\\Application\\chrome.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo if exist "%%ProgramFiles(x86)%%\\Google\\Chrome\\Application\\chrome.exe" ^(
+echo     start "" "%%ProgramFiles(x86)%%\\Google\\Chrome\\Application\\chrome.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo if exist "%%LocalAppData%%\\Google\\Chrome\\Application\\chrome.exe" ^(
+echo     start "" "%%LocalAppData%%\\Google\\Chrome\\Application\\chrome.exe" --app="%%FILE_URL%%" --window-size=1540,920
+echo     exit /b
+echo ^)
+echo :: Fallback default browser
+echo start "" "%%HTML_PATH%%"
+echo exit /b
+) > "%INSTALL_DIR%\\run_app.bat"
+
+:: Create VBScript launcher for silent launch
+(
+echo Set WshShell = CreateObject^("WScript.Shell"^)
+echo strDir = CreateObject^("Scripting.FileSystemObject"^).GetParentFolderName^(WScript.ScriptFullName^)
+echo WshShell.Run "cmd /c """ ^& strDir ^& "\\run_app.bat""", 0, False
+) > "%INSTALL_DIR%\\run_silent.vbs"
+
+echo [4/4] Creating Desktop and Start Menu Shortcuts...
+
+:: Create temporary VBScript to make desktop & start menu shortcuts
+(
+echo Set WshShell = CreateObject^("WScript.Shell"^)
+echo strDesktop = WshShell.SpecialFolders^("Desktop"^)
+echo strPrograms = WshShell.SpecialFolders^("Programs"^)
+echo strAppDir = "%INSTALL_DIR%"
+echo.
+echo ' Desktop shortcut
+echo Set oLink = WshShell.CreateShortcut^(strDesktop ^& "\\EPL 2026.lnk"^)
+echo oLink.TargetPath = strAppDir ^& "\\run_silent.vbs"
+echo oLink.WorkingDirectory = strAppDir
+echo oLink.Description = "EPL 2026 - Premier League Match Center"
+echo If CreateObject^("Scripting.FileSystemObject"^).FileExists^(strAppDir ^& "\\icon.ico"^) Then
+echo     oLink.IconLocation = strAppDir ^& "\\icon.ico, 0"
+echo End If
+echo oLink.Save
+echo.
+echo ' Start Menu shortcut
+echo Set oStartLink = WshShell.CreateShortcut^(strPrograms ^& "\\EPL 2026.lnk"^)
+echo oStartLink.TargetPath = strAppDir ^& "\\run_silent.vbs"
+echo oStartLink.WorkingDirectory = strAppDir
+echo oStartLink.Description = "EPL 2026 - Premier League Match Center"
+echo If CreateObject^("Scripting.FileSystemObject"^).FileExists^(strAppDir ^& "\\icon.ico"^) Then
+echo     oStartLink.IconLocation = strAppDir ^& "\\icon.ico, 0"
+echo End If
+echo oStartLink.Save
+) > "%TEMP%\\create_epl_shortcuts.vbs"
+
+cscript //nologo "%TEMP%\\create_epl_shortcuts.vbs"
+del /f /q "%TEMP%\\create_epl_shortcuts.vbs" 2>nul
 
 echo.
 echo ====================================================================
-echo   Installation complete! Launching EPL Manager...
+echo   SUCCESS! EPL 2026 HAS BEEN INSTALLED ON YOUR PC!
 echo ====================================================================
 echo.
-
-if exist "EPL-Manager.exe" (
-    start "" "%~dp0EPL-Manager.exe"
-) else (
-    cscript //nologo Launch-Silent-App.vbs
-)
-
-timeout /t 2 >nul
-exit /b
+echo - A shortcut "EPL 2026" is now on your Desktop.
+echo - It is also added to your Windows Start Menu.
+echo.
+echo Launching EPL 2026 now...
+wscript "%INSTALL_DIR%\\run_silent.vbs"
+timeout /t 3 >nul
+exit /b 0
 `;
-    // Add primary click file with clear name
+
+    // Add primary click files with clear names
+    zip.file('INSTALL_EPL2026_PC.bat', autoInstallerBat);
+    zip.file('Setup_EPL2026.bat', autoInstallerBat);
     zip.file('CLICK_TO_INSTALL_AND_RUN.bat', autoInstallerBat);
     zip.file('INSTALL_EPL_MANAGER.bat', autoInstallerBat);
 

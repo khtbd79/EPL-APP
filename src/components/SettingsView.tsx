@@ -562,10 +562,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={handleDownloadWindowsZip}
             disabled={downloadingFormat === 'pc'}
-            className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            title="Download 1-Click Windows PC Installer (.zip)"
           >
-            <Download className="w-4 h-4 text-slate-700" />
-            <span>{downloadingFormat === 'pc' ? 'Packaging...' : 'Download PC Bundle'}</span>
+            <Download className="w-4 h-4 text-emerald-400" />
+            <span>{downloadingFormat === 'pc' ? 'Packaging...' : 'Download PC Installer (.ZIP)'}</span>
           </button>
         </div>
       </div>
