@@ -23,6 +23,16 @@ export interface MatchRecord {
 
 export type AppLayoutTheme =
   | 'bet365'
+  | 'one_xbet'
+  | 'betfair'
+  | 'william_hill'
+  | 'bwin'
+  | 'unibet'
+  | 'paddy_power'
+  | 'parimatch'
+  | 'betway'
+  | 'eight_eight_eight'
+  // Legacy aliases for full backward compatibility
   | 'white_red'
   | 'sapphire'
   | 'emerald'

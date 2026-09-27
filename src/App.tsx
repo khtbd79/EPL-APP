@@ -64,6 +64,26 @@ export default function App() {
 
   const activeTheme = getThemeConfig(state.settings.layoutTheme);
 
+  // Dynamically update CSS variables on document root when activeTheme changes
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--theme-primary', activeTheme.primaryColor);
+      root.style.setProperty('--theme-primary-hover', activeTheme.primaryHover);
+      root.style.setProperty('--theme-primary-dark', activeTheme.primaryDark);
+      root.style.setProperty('--theme-primary-light', activeTheme.primaryLight);
+      root.style.setProperty('--theme-border', activeTheme.borderHex);
+      root.style.setProperty('--theme-surface-bg', activeTheme.surfaceBgHex);
+      root.style.setProperty('--theme-card-bg', activeTheme.cardBgHex);
+      root.style.setProperty('--theme-secondary', activeTheme.secondarySwatchHex);
+      root.style.setProperty('--card-bg', activeTheme.cardBgHex);
+      root.style.setProperty('--card-border', activeTheme.borderHex);
+      root.style.setProperty('--surface-bg', activeTheme.surfaceBgHex);
+      document.body.style.backgroundColor = activeTheme.surfaceBgHex;
+      document.body.classList.add('bookie-theme');
+    }
+  }, [activeTheme]);
+
   // Synchronous updater that ensures state and storage are ALWAYS in sync immediately
   const updateAndSaveState = (updater: (prev: AppState) => AppState) => {
     setState((prev) => {
@@ -537,7 +557,7 @@ export default function App() {
 
   return (
     <div 
-      className={`min-h-screen ${activeTheme.textClass} flex flex-col font-sans transition-colors duration-300 w-full overflow-x-hidden relative`}
+      className={`min-h-screen ${activeTheme.textClass} bookie-theme flex flex-col font-sans transition-colors duration-300 w-full overflow-x-hidden relative`}
       style={{
         backgroundColor: activeTheme.surfaceBgHex,
       }}

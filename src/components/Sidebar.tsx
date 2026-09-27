@@ -12,6 +12,7 @@ import {
   Download,
   ChevronRight,
 } from 'lucide-react';
+import { getThemeConfig } from '../utils/theme';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -25,10 +26,13 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
+  state,
   isMobileOpen,
   onCloseMobile,
   onOpenDownloadModal,
 }) => {
+  const theme = getThemeConfig(state.settings.layoutTheme);
+
   useEffect(() => {
     if (isMobileOpen) {
       const prev = document.body.style.overflow;
@@ -77,13 +81,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="pb-3 border-b border-[#292c34]">
           <div
             onClick={() => handleNavClick('dashboard')}
-            className="inline-flex flex-col items-start cursor-pointer py-1 group"
+            className="inline-flex items-center cursor-pointer py-1 group"
           >
-            <span className="text-2xl font-black italic tracking-wider bg-gradient-to-r from-white via-[#fffde6] to-[#ffdf1b] bg-clip-text text-transparent epl-brand-glow">
-              EPL 2026
-            </span>
-            <div className="w-full flex items-center justify-center -mt-0.5">
-              <div className="w-full h-[2.5px] rounded-full bg-gradient-to-r from-transparent via-[#ffdf1b] to-transparent epl-glow-underline" />
+            <div
+              className="px-2.5 py-1 rounded-lg flex items-center justify-center transition-all duration-300 shadow-xs"
+              style={{
+                backgroundColor: theme.secondarySwatchHex || '#ffdf1b',
+              }}
+            >
+              <span className="text-xl font-black italic tracking-wider text-black select-none leading-none">
+                EPL 2026
+              </span>
             </div>
           </div>
         </div>
@@ -105,28 +113,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                style={
                   isActive
-                    ? 'bg-[#126e51] text-[#ffdf1b] shadow-xs font-black border border-[#15805e]'
-                    : 'text-slate-300 hover:bg-[#252830] hover:text-white'
-                }`}
+                    ? {
+                        backgroundColor: theme.primaryColor,
+                        color: theme.secondarySwatchHex || '#ffffff',
+                        fontWeight: 900,
+                        border: `1px solid ${theme.borderHex}`,
+                      }
+                    : {
+                        color: '#cbd5e1',
+                      }
+                }
               >
                 <div className="flex items-center space-x-2.5 truncate">
                   <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
-                      isActive
-                        ? 'bg-[#0c4936] text-[#ffdf1b]'
-                        : 'bg-[#252830] text-slate-400'
-                    }`}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                    style={{
+                      backgroundColor: isActive ? theme.primaryDark : '#252830',
+                      color: isActive ? (theme.secondarySwatchHex || '#ffdf1b') : '#94a3b8',
+                    }}
                   >
                     {item.icon}
                   </div>
                   <span className="truncate tracking-tight">{item.label}</span>
                 </div>
                 {item.isHot && !isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ffdf1b] animate-ping" />
+                  <span 
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: theme.secondarySwatchHex || '#ffdf1b' }}
+                  />
                 )}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 shrink-0 text-[#ffdf1b]" />}
+                {isActive && (
+                  <ChevronRight 
+                    className="w-3.5 h-3.5 shrink-0"
+                    style={{ color: theme.secondarySwatchHex || '#ffdf1b' }}
+                  />
+                )}
               </button>
             );
           })}

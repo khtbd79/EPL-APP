@@ -329,10 +329,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-base font-black text-slate-900 tracking-tight">
-                  Color Themes
+                  World Bookmaker Themes
                 </h2>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-mono">
-                  10 Themes
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono">
+                  Top 10 Bookies
                 </span>
               </div>
             </div>
@@ -446,6 +446,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <h3 className={`text-xs font-black truncate ${theme.isDark ? 'text-white' : 'text-slate-900'}`}>
                         {theme.name}
                       </h3>
+                      <p className="text-[10px] text-slate-400 font-semibold truncate">
+                        {theme.accentColorName}
+                      </p>
                     </div>
                   </div>
                 </div>
