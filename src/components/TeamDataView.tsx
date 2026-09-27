@@ -554,10 +554,10 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       )}
 
       {/* Main Header */}
-      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-red-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-600/20 shrink-0">
-            <Database className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs shrink-0">
+            <Database className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 stroke-[2.2]" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">
@@ -581,9 +581,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
 
           <button
             onClick={handleSaveAllMatches}
-            className="py-2.5 px-3 sm:px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black flex items-center justify-center space-x-1.5 shadow-md shadow-red-600/20 transition-all cursor-pointer whitespace-nowrap"
+            className="py-2.5 px-3 sm:px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center space-x-1.5 shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <Check className="w-4 h-4 stroke-[3] shrink-0" />
+            <Check className="w-4 h-4 stroke-[3] text-emerald-400 shrink-0" />
             <span>Save All Matches</span>
           </button>
         </div>
@@ -709,8 +709,8 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           <div className="pt-3 border-t border-slate-200/80 flex flex-col gap-2.5">
             <div className="bg-slate-50/90 rounded-2xl p-3 sm:p-3.5 border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
               <div className="flex items-center space-x-3">
-                <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Clock className="w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Clock className="w-5 h-5 text-emerald-400" />
                 </div>
                 <div>
                   <span className="text-xs sm:text-sm font-black text-slate-900">
@@ -773,7 +773,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
                   onClick={() => handleMasterTimeChange(presetTime)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
                     masterTime === presetTime
-                      ? 'bg-red-600 text-white border-red-600 shadow-xs'
+                      ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
                   }`}
                   title={presetTime}
@@ -807,7 +807,7 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
       {/* Match Cards Container */}
       {rows.length === 0 ? (
         <div className="bg-white rounded-3xl p-10 border border-dashed border-slate-300 text-center space-y-4">
-          <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto text-red-600">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-800">
             <Database className="w-8 h-8 stroke-[1.8]" />
           </div>
           <div className="max-w-md mx-auto space-y-1">
@@ -819,9 +819,9 @@ export const TeamDataView: React.FC<TeamDataViewProps> = ({
           <div className="flex items-center justify-center space-x-3 pt-2">
             <button
               onClick={handleGenerate10Slots}
-              className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-md shadow-red-600/20 transition-all cursor-pointer"
+              className="py-2.5 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold flex items-center space-x-2 shadow-xs transition-all cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-emerald-400" />
               <span>Generate 10 Slots</span>
             </button>
             <button

@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   targetPercent: 0,
   stakePercent: 0,
   theme: 'dark',
-  layoutTheme: 'white_red',
+  layoutTheme: 'bet365',
   autoFillMarket: 'BTTS YES',
   activeMatchweek: 1,
 };
@@ -43,15 +43,15 @@ export const normalizeLoadedState = (parsed: any): AppState => {
       }
     } catch (_) {}
   }
-  if (!persistentTheme) {
-    persistentTheme = rawSettings.layoutTheme;
+  if (!persistentTheme || persistentTheme === 'white_red' || persistentTheme === 'slate') {
+    persistentTheme = 'bet365';
   }
 
   const settings = { 
     ...DEFAULT_SETTINGS, 
     ...rawSettings,
     currency: (!rawSettings.currency || rawSettings.currency === '$') ? 'BDT' : rawSettings.currency,
-    layoutTheme: persistentTheme || DEFAULT_SETTINGS.layoutTheme || 'white_red',
+    layoutTheme: persistentTheme || DEFAULT_SETTINGS.layoutTheme || 'bet365',
   };
   
   // Normalize match history to ensure profit, loss, and netPnL are correctly assigned

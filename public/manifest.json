@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "EPL Pro Match Center",
-  "short_name": "EPL Pro",
-  "description": "EPL Pro Match Center - Odds & percentage calculator, live match select, and analytics",
+  "name": "EPL2026",
+  "short_name": "EPL2026",
+  "description": "EPL2026 - Odds & percentage calculator, live match select, and analytics",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#020617",
-  "background_color": "#020617",
+  "theme_color": "#126e51",
+  "background_color": "#1f2228",
   "categories": ["sports", "utilities", "productivity"],
   "icons": [
     {

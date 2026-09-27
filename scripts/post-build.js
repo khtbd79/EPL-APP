@@ -213,7 +213,7 @@ try {
 }
 
 // 7. Inject embedded fonts, inline standalone favicon (zero external requests), and Android polyfill into <head>
-const embeddedFavicon = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23dc2626'/%3E%3Ctext x='50' y='68' font-size='60' text-anchor='middle'%3E%E2%9A%BD%3C/text%3E%3C/svg%3E" />`;
+const embeddedFavicon = `<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23126e51'/%3E%3Ctext x='50' y='65' font-size='32' font-weight='900' font-family='sans-serif' text-anchor='middle' fill='%23ffdf1b'%3EEPL%3C/text%3E%3C/svg%3E" />`;
 
 const headMatch = html.match(/<head[^>]*>/i);
 if (headMatch && headMatch.index !== undefined) {
@@ -287,12 +287,12 @@ try {
   zip.file('index.html', html);
 
   const manifest = {
-    name: "EPL Match Center",
-    short_name: "EPL",
+    name: "EPL2026",
+    short_name: "EPL2026",
     start_url: "index.html",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#dc2626",
+    background_color: "#1f2228",
+    theme_color: "#126e51",
     orientation: "any",
     icons: [
       {
@@ -305,9 +305,9 @@ try {
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
 
   const configXml = `<?xml version="1.0" encoding="UTF-8"?>
-<widget id="com.epl.matchcenter" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
-    <name>EPL Match Center</name>
-    <description>EPL Match Task, Category Rankings and Pro Journal</description>
+<widget id="com.epl2026.app" version="1.0.0" xmlns="http://www.w3.org/ns/widgets">
+    <name>EPL2026</name>
+    <description>EPL2026 - Odds &amp; percentage calculator, live match select, and sports analytics</description>
     <content src="index.html" />
     <access origin="*" />
     <preference name="Orientation" value="default" />

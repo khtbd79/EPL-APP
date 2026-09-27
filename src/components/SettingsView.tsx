@@ -530,7 +530,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={handlePwaInstall}
-              className="py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+              className="py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
             >
               <Monitor className="w-4 h-4" />
               <span className="hidden sm:inline">Install on PC (Desktop App)</span>
@@ -540,7 +540,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               type="button"
               onClick={handleOpenInNewWindow}
-              className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+              className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
             >
               <ExternalLink className="w-4 h-4" />
               <span className="hidden sm:inline">Open in New Tab to Install</span>
@@ -554,7 +554,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             disabled={downloadingFormat === 'bat'}
             className="py-2.5 px-4 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-900 font-bold text-xs shadow-xs flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap"
           >
-            <Download className="w-4 h-4 text-red-600" />
+            <Download className="w-4 h-4 text-emerald-600" />
             <span>{downloadingFormat === 'bat' ? 'Downloading...' : 'Download .BAT'}</span>
           </button>
 
@@ -573,10 +573,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================
           SECTION 2: WEB INTO APP (MOBILE APK BUILDER)
       ======================================================== */}
-      <div className="solid-card p-6 space-y-5 bg-white border-2 border-red-200 rounded-2xl shadow-sm">
-        <div className="flex items-start sm:items-center justify-between gap-3 border-b border-red-100 pb-3 flex-wrap">
+      <div className="solid-card p-6 space-y-5 bg-white border border-slate-200 rounded-2xl shadow-xs">
+        <div className="flex items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 flex-wrap">
           <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 flex items-center justify-center shrink-0">
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
@@ -591,9 +591,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             href="https://www.webintoapp.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 flex items-center gap-1.5 transition-all shadow-xs whitespace-nowrap"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 flex items-center gap-1.5 transition-all shadow-xs whitespace-nowrap"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-red-600" />
+            <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
             <span>WebIntoApp.com</span>
           </a>
         </div>
@@ -604,14 +604,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             onClick={handleDownloadWebIntoApp}
             disabled={downloadingFormat === 'webintoapp'}
-            className="p-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-left transition-all cursor-pointer flex items-center justify-between gap-2 shadow-md"
+            className="p-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-left transition-all cursor-pointer flex items-center justify-between gap-2 shadow-xs"
           >
             <div>
-              <div className="font-black text-xs flex items-center gap-1.5 whitespace-nowrap">
-                <Package className="w-4 h-4 text-white" />
+              <div className="font-bold text-xs flex items-center gap-1.5 whitespace-nowrap">
+                <Package className="w-4 h-4 text-emerald-400" />
                 <span>WebIntoApp (.ZIP)</span>
               </div>
-              <div className="text-[11px] text-red-100 mt-0.5 font-medium">100% Offline Package</div>
+              <div className="text-[11px] text-slate-300 mt-0.5 font-medium">100% Offline Package</div>
             </div>
             <Download className="w-5 h-5 text-white shrink-0" />
           </button>
@@ -654,11 +654,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
             <div>
               <div className="text-[10px] text-slate-400 font-bold uppercase">App Name</div>
-              <div className="text-xs font-black text-slate-900">EPL Pro Match Center</div>
+              <div className="text-xs font-black text-slate-900">EPL2026</div>
             </div>
             <button
               type="button"
-              onClick={() => handleCopyText('EPL Pro Match Center', 'name')}
+              onClick={() => handleCopyText('EPL2026', 'name')}
               className="p-1 rounded text-slate-400 hover:text-slate-700"
               title="Copy Name"
             >
@@ -669,11 +669,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
             <div>
               <div className="text-[10px] text-slate-400 font-bold uppercase">Package Name</div>
-              <div className="text-xs font-mono font-bold text-slate-800">com.eplpro.matchcenter</div>
+              <div className="text-xs font-mono font-bold text-slate-800">com.epl2026.app</div>
             </div>
             <button
               type="button"
-              onClick={() => handleCopyText('com.eplpro.matchcenter', 'pkg')}
+              onClick={() => handleCopyText('com.epl2026.app', 'pkg')}
               className="p-1 rounded text-slate-400 hover:text-slate-700"
               title="Copy Package"
             >
@@ -688,26 +688,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
             <div className="text-[10px] text-slate-400 font-bold uppercase">Theme / Splash</div>
-            <div className="text-xs font-mono font-bold text-red-600">#dc2626 (Red)</div>
+            <div className="text-xs font-mono font-bold text-slate-900">#0f172a (Titanium Slate)</div>
           </div>
         </div>
       </div>
 
       {/* Main Currency Settings Form */}
-      <form onSubmit={handleSave} className="solid-card p-6 space-y-6 bg-white border border-red-100 rounded-2xl shadow-sm">
+      <form onSubmit={handleSave} className="solid-card p-6 space-y-6 bg-white border border-slate-200 rounded-2xl shadow-xs">
         {/* Currency Display (Default BDT) */}
         <div>
           <label className="block text-xs font-bold text-slate-800 mb-2 uppercase tracking-wider flex items-center space-x-2">
-            <Coins className="w-4 h-4 text-red-600" />
+            <Coins className="w-4 h-4 text-emerald-600" />
             <span>Default Currency Symbol</span>
           </label>
-          <div className="p-4 rounded-xl bg-red-50/70 border border-red-200 flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
             <div>
               <div className="text-sm font-black text-slate-900">Bangladeshi Taka (BDT)</div>
             </div>
-            <div className="px-4 py-2 rounded-xl bg-white border border-red-200 shadow-sm flex items-center space-x-2">
+            <div className="px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center space-x-2">
               <span className="text-xs font-bold text-slate-500">Active:</span>
-              <span className="text-base font-black font-mono text-red-600">BDT</span>
+              <span className="text-base font-black font-mono text-emerald-600">BDT</span>
             </div>
           </div>
         </div>
@@ -715,7 +715,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Save Settings Button */}
         <button
           type="submit"
-          className="w-full py-3.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-sm shadow-md transition-all active:scale-[0.98] cursor-pointer"
+          className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-xs transition-all active:scale-[0.98] cursor-pointer"
         >
           Save Settings
         </button>
@@ -724,9 +724,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* ========================================================
           BACKUP & RESTORE DATA SECTION (Moved inside Settings)
       ======================================================== */}
-      <div className="solid-card p-6 space-y-6 bg-white border border-red-100 rounded-2xl shadow-sm">
-        <div className="flex items-center space-x-3 border-b border-red-100 pb-3">
-          <HardDriveDownload className="w-5 h-5 text-red-600" />
+      <div className="solid-card p-6 space-y-6 bg-white border border-slate-200 rounded-2xl shadow-xs">
+        <div className="flex items-center space-x-3 border-b border-slate-100 pb-3">
+          <HardDriveDownload className="w-5 h-5 text-slate-800" />
           <h2 className="text-base font-black text-slate-900 tracking-tight">
             Backup & Restore Data
           </h2>
@@ -736,7 +736,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           {/* Export JSON Card */}
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-4">
             <div className="flex items-center space-x-2 text-slate-900 font-extrabold text-sm">
-              <FileJson className="w-4 h-4 text-red-600" />
+              <FileJson className="w-4 h-4 text-emerald-600" />
               <span>Export JSON Backup</span>
             </div>
 
@@ -744,7 +744,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportJSON}
-                className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                className="flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>Download Backup</span>

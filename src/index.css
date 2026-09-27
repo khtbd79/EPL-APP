@@ -1,21 +1,32 @@
 @import "tailwindcss";
 
-/* Universal bulletproof typography fallback system */
+/* Universal bulletproof typography system */
 :root {
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
 
-  /* Theme variables default (Classic Red & White) */
-  --theme-primary: #dc2626;
-  --theme-primary-hover: #b91c1c;
-  --theme-primary-dark: #991b1b;
-  --theme-primary-light: #fef2f2;
-  --theme-border: #fecaca;
-  --card-bg: #ffffff;
-  --card-border: #fecaca;
-  --card-text: #0f172a;
-  --surface-bg: #faf5f5;
-  --surface-text: #0f172a;
+  /* Authentic Bet365 Signature Theme Palette */
+  --bet365-green: #126e51;
+  --bet365-green-dark: #0c4936;
+  --bet365-green-light: #168a65;
+  --bet365-yellow: #ffdf1b;
+  --bet365-yellow-hover: #ffe438;
+  --bet365-dark-bg: #1f2228;
+  --bet365-card-bg: #282b32;
+  --bet365-card-border: #383d47;
+  --bet365-odds-bg: #383d47;
+
+  /* Theme variables default (Bet365 Sportsbook Pro) */
+  --theme-primary: #126e51;
+  --theme-primary-hover: #158360;
+  --theme-primary-dark: #0c4936;
+  --theme-primary-light: #1f332c;
+  --theme-border: #383d47;
+  --card-bg: #282b32;
+  --card-border: #383d47;
+  --card-text: #f8fafc;
+  --surface-bg: #1f2228;
+  --surface-text: #f8fafc;
 }
 
 /* Touch and mobile optimizations */
@@ -29,8 +40,8 @@ html, body {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--surface-bg, #faf5f5);
-  color: var(--surface-text, #0f172a);
+  background-color: var(--surface-bg, #1f2228);
+  color: var(--surface-text, #f8fafc);
 }
 
 button, a, select, input, textarea {
@@ -38,23 +49,20 @@ button, a, select, input, textarea {
   font-family: inherit;
 }
 
-/* Modern Smooth Custom Scrollbar */
+/* Bet365 Sleek Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f8fafc;
-}
-html.dark ::-webkit-scrollbar-track {
-  background: #0b0f19;
+  background: #181a1f;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--theme-border, #fca5a5);
+  background: #3e4450;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-primary, #dc2626);
+  background: #ffdf1b;
 }
 
 /* Numeric & currency display consistency */
@@ -64,293 +72,138 @@ html.dark ::-webkit-scrollbar-track {
 }
 
 @layer utilities {
-  /* Modern High-End Executive Glass/Solid Card */
+  /* Bet365 Sportsbook Cards */
   .solid-card, .glass-card {
-    background-color: var(--card-bg, #ffffff);
-    border: 1px solid var(--card-border, #fecaca);
-    border-radius: 18px;
-    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    background-color: var(--card-bg, #282b32);
+    border: 1px solid var(--card-border, #383d47);
+    border-radius: 14px;
+    box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.35);
     position: relative;
-    color: var(--card-text, #0f172a);
+    color: var(--card-text, #f8fafc);
   }
   
   .solid-card-hover, .glass-card-hover {
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .solid-card-hover:hover, .glass-card-hover:hover {
-    transform: translateY(-2px);
-    border-color: var(--theme-primary, #dc2626);
-    box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.1), 0 4px 8px -2px rgba(0, 0, 0, 0.05);
+    border-color: #ffdf1b;
+    box-shadow: 0 4px 14px -2px rgba(255, 223, 27, 0.2);
   }
 
-  /* Form Inputs */
+  /* Bet365 Inputs */
   .solid-input, .glass-input {
-    background-color: var(--card-bg, #ffffff);
-    border: 1px solid var(--card-border, #fca5a5);
-    color: var(--card-text, #0f172a);
-    border-radius: 12px;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    background-color: #1a1c22;
+    border: 1px solid #383d47;
+    color: #ffffff;
+    border-radius: 10px;
+    transition: all 0.16s ease;
   }
   .solid-input:focus, .glass-input:focus {
     outline: none;
-    border-color: var(--theme-primary, #dc2626);
-    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+    border-color: #ffdf1b;
+    box-shadow: 0 0 0 2px rgba(255, 223, 27, 0.25);
   }
 
-  /* Badge */
-  .solid-badge {
-    background-color: var(--theme-primary-light, #fee2e2);
-    border: 1px solid var(--card-border, #fecaca);
-    color: var(--theme-primary, #dc2626);
+  /* Bet365 Odds Button Box */
+  .bet365-odds-box {
+    background-color: #383d47;
+    border: 1px solid #4a505c;
+    color: #ffdf1b;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    border-radius: 6px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .bet365-odds-box:hover {
+    background-color: #454c59;
+    border-color: #ffdf1b;
+  }
+  .bet365-odds-box.selected, .bet365-odds-box:active {
+    background-color: #ffdf1b !important;
+    color: #121417 !important;
+    border-color: #ffdf1b !important;
   }
 }
 
-/* =========================================================
-   UNIVERSAL THEME DYNAMIC ADAPTATION (Light & Dark)
-   ========================================================= */
-
-/* Internal white surfaces and cards dynamically adopt theme card color */
-.bg-white:not(header *):not(.badge-form-w):not(.badge-form-d):not(.badge-form-l):not([data-form]) {
-  background-color: var(--card-bg, #ffffff) !important;
-  border-color: var(--card-border, #fecaca);
-}
-
-/* Specific card elements */
-.solid-card, 
-.glass-card,
-aside {
-  background-color: var(--card-bg, #ffffff) !important;
-  border-color: var(--card-border, #fecaca) !important;
-  color: var(--card-text, #0f172a) !important;
-}
-
-/* Secondary light panels dynamically adopt theme primary light tint */
-.bg-red-50,
-.bg-red-50\/50,
-.bg-red-50\/70,
-.bg-red-50\/80,
-.bg-red-50\/90,
-.bg-red-100 {
-  background-color: var(--theme-primary-light, #fef2f2) !important;
-  border-color: var(--theme-border, #fecaca) !important;
-}
-
-/* Red borders dynamically adopt theme border */
-.border-red-100,
-.border-red-200,
-.border-red-300 {
-  border-color: var(--theme-border, #fecaca) !important;
-}
-
-/* Red text accents dynamically adopt theme primary color */
-.text-red-600,
-.text-red-700:not([data-form="L"]) {
-  color: var(--theme-primary, #dc2626) !important;
-}
-
-/* Red buttons & badges dynamically adopt theme primary */
-button.bg-red-600:not([data-form="L"]):not(.form-badge-l),
-a.bg-red-600:not([data-form="L"]):not(.form-badge-l),
-.bg-red-600:not([data-form="L"]):not(.form-badge-l):not(header *):not(.badge-form-l) {
-  background-color: var(--theme-primary, #dc2626) !important;
-}
-
-button.hover\:bg-red-700:hover,
-a.hover\:bg-red-700:hover,
-button.bg-red-600:hover,
-a.bg-red-600:hover {
-  background-color: var(--theme-primary-hover, #b91c1c) !important;
-}
-
-/* Focus rings */
-.focus\:ring-red-400:focus,
-.focus\:ring-red-500:focus {
-  --tw-ring-color: var(--theme-primary, #dc2626) !important;
-}
-
-/* =========================================================
-   LIGHT THEMES TEXT & SURFACE STYLES (when NOT in dark mode)
-   ========================================================= */
-html:not(.dark) .bg-\[\#0A0E17\], 
-html:not(.dark) .bg-\[\#080C14\], 
-html:not(.dark) .bg-\[\#0B0F19\], 
-html:not(.dark) .bg-\[\#060911\], 
-html:not(.dark) .bg-\[\#0f172a\],
-html:not(.dark) .bg-slate-950,
-html:not(.dark) .bg-slate-900:not(header *):not(header),
-html:not(.dark) .bg-slate-900\/90,
-html:not(.dark) .bg-slate-900\/60,
-html:not(.dark) .bg-slate-900\/80 {
-  background-color: var(--card-bg, #ffffff) !important;
-  border-color: var(--card-border, #fecaca) !important;
-  color: var(--card-text, #0f172a) !important;
-}
-
-html:not(.dark) .bg-white\/\[0\.03\],
-html:not(.dark) .bg-white\/\[0\.04\],
-html:not(.dark) .bg-white\/\[0\.05\],
-html:not(.dark) .bg-white\/\[0\.06\],
-html:not(.dark) .bg-white\/\[0\.08\],
-html:not(.dark) .bg-slate-950\/60,
-html:not(.dark) .bg-slate-950\/70,
-html:not(.dark) .bg-slate-950\/80 {
-  background-color: var(--theme-primary-light, #fef2f2) !important;
-  border-color: var(--card-border, #fee2e2) !important;
-  color: #0f172a !important;
-}
-
-html:not(.dark) main .solid-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l):not(button.bg-red-600 *):not(button.bg-blue-600 *):not(button.bg-emerald-600 *):not(button.bg-purple-700 *):not(button.bg-amber-600 *):not(button.bg-teal-600 *):not(button.bg-orange-600 *):not(button.bg-rose-600 *):not(button.bg-slate-800 *):not(button[style*="background"] *),
-html:not(.dark) main .glass-card .text-white:not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l):not(button[style*="background"] *):not(button.bg-red-600 *),
-html:not(.dark) main .text-white:not(header *):not(.bg-red-600 *):not(button *):not([data-form]):not(.form-badge-w):not(.form-badge-d):not(.form-badge-l) {
-  color: #0a0a0a !important;
-}
-
-html:not(.dark) main .text-slate-100,
-html:not(.dark) main .text-slate-200 {
-  color: #0f172a !important;
-}
-
-html:not(.dark) main .text-slate-300,
-html:not(.dark) main .text-slate-400 {
-  color: #334155 !important;
-}
-
-html:not(.dark) main .text-slate-500 {
-  color: #475569 !important;
-}
-
-/* Light Theme Tables */
-html:not(.dark) table th {
-  background-color: var(--theme-primary-light, #fef2f2) !important;
-  color: var(--theme-primary-dark, #991b1b) !important;
-  border-bottom: 2px solid var(--theme-border, #f87171) !important;
-}
-html:not(.dark) table tr:hover td {
-  background-color: var(--theme-primary-light, #fff1f2) !important;
-}
-html:not(.dark) table td {
-  border-color: var(--card-border, #fee2e2) !important;
-  color: #0f172a !important;
-}
-
-/* =========================================================
-   DARK THEME STYLES (when in dark mode)
-   ========================================================= */
+/* Comprehensive Dark Sportsbook Palette Overrides for bet365 */
 html.dark {
-  background-color: var(--surface-bg, #080c14) !important;
-  color: #f1f5f9 !important;
+  background-color: var(--surface-bg, #1f2228);
+  color: #f1f5f9;
 }
 html.dark body {
-  background-color: var(--surface-bg, #080c14) !important;
-  color: #f1f5f9 !important;
+  background-color: var(--surface-bg, #1f2228);
+  color: #f1f5f9;
 }
 
-html.dark .solid-card,
-html.dark .glass-card,
-html.dark aside {
-  background-color: var(--card-bg, #0f172a) !important;
-  border-color: var(--card-border, #1e293b) !important;
-  color: #f1f5f9 !important;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+html.dark .bg-white {
+  background-color: #282b32 !important;
+  color: #f8fafc;
 }
-
-html.dark .bg-white,
-html.dark [class*="bg-white"]:not(header *):not(.badge-form-w):not(.badge-form-d):not(.badge-form-l):not([data-form]) {
-  background-color: var(--card-bg, #0f172a) !important;
-  color: #f1f5f9 !important;
-  border-color: var(--card-border, #1e293b) !important;
+html.dark .text-slate-900 {
+  color: #ffffff !important;
 }
-
-html.dark .bg-slate-50,
-html.dark .bg-slate-100,
-html.dark .bg-red-50,
-html.dark .bg-amber-50,
-html.dark .bg-blue-50,
-html.dark .bg-emerald-50,
-html.dark .bg-purple-50,
-html.dark .bg-teal-50,
-html.dark .bg-orange-50,
-html.dark .bg-rose-50 {
-  background-color: #0b0f19 !important;
+html.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+html.dark .text-slate-700 {
   color: #cbd5e1 !important;
-  border-color: #1e293b !important;
 }
-
-html.dark .border-red-100,
-html.dark .border-red-200,
-html.dark .border-slate-200,
-html.dark .border-slate-300 {
-  border-color: #1e293b !important;
-}
-
-html.dark .text-slate-900,
-html.dark .text-slate-800,
-html.dark .text-black,
-html.dark .text-slate-950 {
-  color: #f1f5f9 !important;
-}
-
-html.dark .text-slate-700,
 html.dark .text-slate-600 {
-  color: #cbd5e1 !important;
-}
-
-html.dark .text-slate-500,
-html.dark .text-slate-400 {
   color: #94a3b8 !important;
 }
-
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-200\/90,
+html.dark .border-slate-100 {
+  border-color: #383d47 !important;
+}
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/90,
+html.dark .bg-slate-100 {
+  background-color: #1e2026 !important;
+}
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #343844 !important;
+}
+html.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #383d47 !important;
+}
 html.dark input,
 html.dark select,
 html.dark textarea {
-  background-color: #0b0f19 !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
-}
-
-html.dark table th {
-  background-color: #0b0f19 !important;
-  color: #38bdf8 !important;
-  border-bottom: 2px solid #1e293b !important;
-}
-
-html.dark table tr:hover td {
-  background-color: #1e293b !important;
-}
-
-html.dark table td {
-  border-color: #1e293b !important;
-  color: #e2e8f0 !important;
-}
-
-/* =========================================================
-   HEADER & NAVBAR UNIVERSAL STYLING
-   ========================================================= */
-header #epl-brand-title,
-header #mobile-epl-title,
-.epl-brand-title {
+  background-color: #1a1c22 !important;
+  border-color: #383d47 !important;
   color: #ffffff !important;
 }
 
-/* Form outcome badges & indicators: W = Green, D = Orange, L = Red */
+/* Match Form Result Badges: W = Emerald, D = Orange, L = Rose */
 .form-badge-w,
 .badge-form-w,
 [data-form="W"] {
-  background-color: #16a34a !important; /* Green */
+  background-color: #10b981 !important;
   color: #ffffff !important;
 }
 
 .form-badge-d,
 .badge-form-d,
 [data-form="D"] {
-  background-color: #f97316 !important; /* Orange */
+  background-color: #f59e0b !important;
   color: #ffffff !important;
 }
 
 .form-badge-l,
 .badge-form-l,
 [data-form="L"] {
-  background-color: #dc2626 !important; /* Red */
+  background-color: #f43f5e !important;
   color: #ffffff !important;
 }
 
@@ -366,9 +219,43 @@ header #mobile-epl-title,
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.18s ease-out;
+  animation: fadeIn 0.16s ease-out;
 }
 
 .animate-scaleUp {
-  animation: scaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: scaleUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* EPL 2026 Navbar Luminous Brand Styling with Glowing Line Flash */
+@keyframes eplDipDip {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleX(0.8);
+    filter: drop-shadow(0 0 2px rgba(255, 223, 27, 0.3));
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+    filter: drop-shadow(0 0 6px rgba(255, 223, 27, 0.9)) drop-shadow(0 0 12px rgba(255, 255, 255, 0.6));
+  }
+}
+
+@keyframes eplTextLighting {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.45)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    opacity: 0.94;
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 250, 204, 0.85)) drop-shadow(0 0 16px rgba(255, 223, 27, 0.5)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+    opacity: 1;
+  }
+}
+
+.epl-brand-glow {
+  animation: eplTextLighting 2.4s ease-in-out infinite;
+}
+
+.epl-glow-underline {
+  animation: eplDipDip 2.4s ease-in-out infinite;
+}
+

@@ -22,6 +22,7 @@ export interface MatchRecord {
 }
 
 export type AppLayoutTheme =
+  | 'bet365'
   | 'white_red'
   | 'sapphire'
   | 'emerald'

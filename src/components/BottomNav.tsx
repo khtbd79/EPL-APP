@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ActiveTab, AppState } from '../types';
-import { getThemeConfig } from '../utils/theme';
 import {
   LayoutDashboard,
-  Calculator,
-  History,
-  Wallet,
-  Settings as SettingsIcon,
-  Plus,
-  BarChart3,
-  HardDriveDownload,
-  X,
-  Menu,
-  FileText,
-  Layers,
   Trophy,
+  Plus,
   Target,
+  Menu,
+  X,
   TrendingUp,
-  Database
+  Database,
+  Layers,
+  FileText,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 
 interface BottomNavProps {
@@ -27,9 +21,8 @@ interface BottomNavProps {
   state: AppState;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, state }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab }) => {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-  const themeConfig = getThemeConfig(state.settings.layoutTheme);
 
   useEffect(() => {
     if (isMoreMenuOpen) {
@@ -48,55 +41,39 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
   };
 
   const moreMenuItems = [
-    { id: 'compounding' as ActiveTab, label: 'COMPAUNDING', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
-    { id: 'standings' as ActiveTab, label: 'Standing', icon: <Trophy className="w-5 h-5" />, color: 'amber' },
-    { id: 'team_data' as ActiveTab, label: 'Team Data', icon: <Database className="w-5 h-5" />, color: 'red' },
-    { id: 'all_markets' as ActiveTab, label: 'All Markets', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
-    { id: 'demo_match' as ActiveTab, label: 'Match Comparison', icon: <Target className="w-5 h-5" />, color: 'emerald' },
-    { id: 'select_match' as ActiveTab, label: 'Select Match', icon: <Trophy className="w-5 h-5" />, color: 'red' },
-    { id: 'overview' as ActiveTab, label: 'OVER VIEW', icon: <Layers className="w-5 h-5" />, color: 'sky' },
-    { id: 'report' as ActiveTab, label: 'Report & Records', icon: <FileText className="w-5 h-5" />, color: 'cyan' },
-    { id: 'settings' as ActiveTab, label: 'Settings & Backup', icon: <SettingsIcon className="w-5 h-5" />, color: 'purple' },
+    { id: 'compounding' as ActiveTab, label: 'Compounding', icon: <TrendingUp className="w-5 h-5 text-[#ffdf1b]" /> },
+    { id: 'standings' as ActiveTab, label: 'Standing', icon: <Trophy className="w-5 h-5 text-emerald-400" /> },
+    { id: 'team_data' as ActiveTab, label: 'Team Data', icon: <Database className="w-5 h-5 text-sky-400" /> },
+    { id: 'all_markets' as ActiveTab, label: 'All Markets', icon: <TrendingUp className="w-5 h-5 text-teal-400" /> },
+    { id: 'demo_match' as ActiveTab, label: 'Match Comparison', icon: <Target className="w-5 h-5 text-indigo-400" /> },
+    { id: 'select_match' as ActiveTab, label: 'In-Play Matches', icon: <Trophy className="w-5 h-5 text-rose-400" /> },
+    { id: 'overview' as ActiveTab, label: 'Overview', icon: <Layers className="w-5 h-5 text-blue-400" /> },
+    { id: 'report' as ActiveTab, label: 'Ledger', icon: <FileText className="w-5 h-5 text-purple-400" /> },
+    { id: 'settings' as ActiveTab, label: 'Settings & Themes', icon: <SettingsIcon className="w-5 h-5 text-slate-400" /> },
   ];
 
   return (
     <>
-      {/* Expanded "More Menu" Modal for mobile & tablet */}
+      {/* Expanded Menu Modal */}
       {isMoreMenuOpen && typeof document !== 'undefined' && createPortal(
         <div
-          className="lg:hidden fixed inset-0 z-[99999] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+          className="lg:hidden fixed inset-0 z-[99999] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
           onClick={() => setIsMoreMenuOpen(false)}
         >
-          <div 
-            className="w-full max-w-sm border p-5 rounded-3xl space-y-4 shadow-2xl relative animate-scaleUp my-auto"
-            style={{
-              backgroundColor: themeConfig.isDark ? '#111827' : '#ffffff',
-              borderColor: themeConfig.borderHex,
-              color: themeConfig.isDark ? '#f1f5f9' : '#0f172a',
-            }}
+          <div
+            className="w-full max-w-sm bg-[#22252c] border border-[#383d47] p-5 rounded-3xl space-y-4 shadow-2xl relative animate-scaleUp my-auto text-white"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: themeConfig.borderHex }}>
+            <div className="flex items-center justify-between border-b border-[#313640] pb-3">
               <div className="flex items-center space-x-2">
-                <div 
-                  className="p-2 rounded-xl border"
-                  style={{
-                    backgroundColor: themeConfig.isDark ? '#1e293b' : themeConfig.primaryLight,
-                    borderColor: themeConfig.borderHex,
-                    color: themeConfig.primaryColor,
-                  }}
-                >
-                  <Menu className="w-4 h-4" />
-                </div>
-                <h3 className={`text-sm font-black uppercase tracking-wider ${themeConfig.isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Navigation Menu
-                </h3>
+                <span className="text-lg font-black text-white italic tracking-tighter">
+                  EPL 2026
+                </span>
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider ml-1.5">Sports Menu</h3>
               </div>
-              <button 
+              <button
                 onClick={() => setIsMoreMenuOpen(false)}
-                className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
-                  themeConfig.isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                }`}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-[#2c3038] transition-colors cursor-pointer"
                 title="Close"
               >
                 <X className="w-5 h-5" />
@@ -112,29 +89,11 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
                     onClick={() => handleTabClick(item.id)}
                     className={`p-3 rounded-2xl border flex flex-col items-center justify-center text-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? 'shadow-sm font-black'
-                        : themeConfig.isDark
-                        ? 'bg-slate-900/60 border-slate-800 text-slate-300 hover:bg-slate-800'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        ? 'bg-[#126e51] text-[#ffdf1b] border-[#15805e] shadow-xs font-black'
+                        : 'bg-[#1b1d22] hover:bg-[#282b32] border-[#2c3038] text-slate-200'
                     }`}
-                    style={
-                      isActive
-                        ? {
-                            backgroundColor: themeConfig.isDark ? '#1e293b' : themeConfig.primaryLight,
-                            borderColor: themeConfig.borderHex,
-                            color: themeConfig.primaryColor,
-                          }
-                        : undefined
-                    }
                   >
-                    <div 
-                      className="p-2 rounded-xl border shadow-xs"
-                      style={{
-                        backgroundColor: themeConfig.isDark ? '#0f172a' : '#ffffff',
-                        borderColor: themeConfig.borderHex,
-                        color: themeConfig.primaryColor,
-                      }}
-                    >
+                    <div className="p-2 rounded-xl bg-[#282b32] border border-[#383d47] shadow-2xs">
                       {item.icon}
                     </div>
                     <span className="truncate w-full">{item.label}</span>
@@ -147,88 +106,73 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
         document.body
       )}
 
-      {/* Main Bottom Navigation Bar */}
-      <nav 
-        className="lg:hidden fixed bottom-0 inset-x-0 w-full z-40 border-t px-3 pt-2.5 pb-5 sm:pb-6 no-print shadow-[0_-4px_20px_rgba(0,0,0,0.06)] transition-colors duration-300"
-        style={{
-          backgroundColor: themeConfig.isDark ? '#0b0f19' : '#ffffff',
-          borderColor: themeConfig.borderHex,
-        }}
-      >
+      {/* Main Bottom Dock (bet365 Sportsbook Dock) */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 w-full z-40 border-t border-[#292c34] px-3 pt-2 pb-5 sm:pb-6 no-print bg-[#181a1f]/95 backdrop-blur-md shadow-2xl transition-colors duration-300">
         <div className="max-w-md mx-auto flex items-center justify-between relative min-h-[48px]">
-          
-          {/* Left 1: Dashboard */}
+          {/* Dashboard */}
           <button
             onClick={() => handleTabClick('dashboard')}
-            className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              activeTab === 'dashboard' ? 'font-bold' : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
+              activeTab === 'dashboard'
+                ? 'text-[#ffdf1b] font-black'
+                : 'text-slate-400 hover:text-white'
             }`}
-            style={activeTab === 'dashboard' ? { color: themeConfig.primaryColor } : undefined}
           >
             <LayoutDashboard className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-1">Dashboard</span>
+            <span className="text-[10px] font-bold mt-1">Sports</span>
           </button>
 
-          {/* Left 2: Standing */}
+          {/* Standing */}
           <button
             onClick={() => handleTabClick('standings')}
-            className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              activeTab === 'standings' || activeTab === 'top_teams' ? 'font-bold' : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
+              activeTab === 'standings' || activeTab === 'top_teams'
+                ? 'text-[#ffdf1b] font-black'
+                : 'text-slate-400 hover:text-white'
             }`}
-            style={activeTab === 'standings' || activeTab === 'top_teams' ? { color: themeConfig.primaryColor } : undefined}
           >
             <Trophy className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-1">Standing</span>
+            <span className="text-[10px] font-bold mt-1">Standing</span>
           </button>
 
-          {/* CENTER: Floating Action Button (Select Match) */}
-          <div className="flex-1 flex items-center justify-center -mt-7">
+          {/* Floating Action Button (bet365 In-Play / Bet Slip Action) */}
+          <div className="flex-1 flex items-center justify-center -mt-6">
             <button
               onClick={() => handleTabClick('select_match')}
-              className={`w-12 h-12 rounded-full text-white shadow-lg border-2 flex items-center justify-center transition-all transform active:scale-90 cursor-pointer ${
-                activeTab === 'select_match' || activeTab === 'daily_task' ? 'scale-105 ring-2' : 'hover:scale-105'
+              className={`w-12 h-12 rounded-2xl bg-[#ffdf1b] hover:bg-[#ffe543] text-slate-950 shadow-lg shadow-black/40 border-2 border-[#181a1f] flex items-center justify-center transition-all transform active:scale-90 cursor-pointer ${
+                activeTab === 'select_match' || activeTab === 'daily_task' ? 'scale-105 ring-2 ring-[#ffdf1b]' : 'hover:scale-105'
               }`}
-              style={{
-                backgroundColor: themeConfig.primaryColor,
-                color: themeConfig.isDark ? '#090d16' : '#ffffff',
-                borderColor: themeConfig.isDark ? '#1e293b' : '#ffffff',
-              }}
-              title="Select Match"
+              title="In-Play Matches & Bet Slip"
             >
-              <Plus className="w-6 h-6 font-black stroke-[3]" />
+              <Plus className="w-6 h-6 stroke-[3]" />
             </button>
           </div>
 
-          {/* Right 1: Match Comparison */}
+          {/* Compounding */}
           <button
-            onClick={() => handleTabClick('demo_match')}
-            className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              activeTab === 'demo_match' || activeTab === 'match_select' ? 'font-bold' : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+            onClick={() => handleTabClick('compounding')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
+              activeTab === 'compounding'
+                ? 'text-[#ffdf1b] font-black'
+                : 'text-slate-400 hover:text-white'
             }`}
-            style={activeTab === 'demo_match' || activeTab === 'match_select' ? { color: themeConfig.primaryColor } : undefined}
           >
-            <Target className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-1">Comparison</span>
+            <TrendingUp className="w-5 h-5" />
+            <span className="text-[10px] font-bold mt-1">Compound</span>
           </button>
 
-          {/* Right 2: More */}
+          {/* More Menu */}
           <button
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
-            className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              isMoreMenuOpen || ['compounding', 'report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
-                ? 'font-bold'
-                : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
+            className={`flex flex-col items-center justify-center flex-1 py-1 transition-all active:scale-95 cursor-pointer ${
+              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets', 'overview', 'demo_match'].includes(activeTab)
+                ? 'text-[#ffdf1b] font-black'
+                : 'text-slate-400 hover:text-white'
             }`}
-            style={
-              isMoreMenuOpen || ['compounding', 'report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
-                ? { color: themeConfig.primaryColor }
-                : undefined
-            }
           >
             <Menu className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-1">Menu</span>
+            <span className="text-[10px] font-bold mt-1">Menu</span>
           </button>
-
         </div>
       </nav>
     </>

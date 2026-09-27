@@ -165,11 +165,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => setIsPrintModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all active:scale-95 whitespace-nowrap shrink-0"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center space-x-1.5 shadow-xs cursor-pointer transition-all active:scale-95 whitespace-nowrap shrink-0"
             title="Print Market Win / Loss Report"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print</span>
+            <span>Print Report</span>
           </button>
           <div className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-black font-mono border border-slate-200 whitespace-nowrap shrink-0">
             <span className="hidden sm:inline">{totalEplMatches} Matches Synced</span>
@@ -193,7 +193,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <button
               onClick={() => setActiveTab('standings')}
-              className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center space-x-1 cursor-pointer"
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center space-x-1 cursor-pointer"
             >
               <span>Full Standings</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -208,7 +208,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="text-xs font-bold text-slate-700">No Team Data Recorded</div>
               <button
                 onClick={() => setActiveTab('team_data')}
-                className="mt-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="mt-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
               >
                 Go to Team Data
               </button>
@@ -299,7 +299,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <button
               onClick={() => setActiveTab('all_markets')}
-              className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center space-x-1 cursor-pointer"
+              className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center space-x-1 cursor-pointer"
             >
               <span>All Markets</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -314,7 +314,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="text-xs font-bold text-slate-700">No Team Data Recorded</div>
               <button
                 onClick={() => setActiveTab('team_data')}
-                className="mt-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="mt-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
               >
                 Go to Team Data
               </button>
@@ -466,7 +466,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               <button
                 onClick={() => setActiveTab('select_match')}
-                className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center space-x-0.5 cursor-pointer ml-1"
+                className="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center space-x-0.5 cursor-pointer ml-1"
               >
                 <span>Add</span>
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -481,7 +481,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div className="text-sm font-black text-slate-700">No Pending Matches Active</div>
                 <button
                   onClick={() => setActiveTab('select_match')}
-                  className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  className="mt-3 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
                 >
                   Add Match in Match Center
                 </button>
@@ -549,7 +549,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             setViewingSlipMatch(item);
                             setSlipInitialEditing(false);
                           }}
-                          className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg border border-red-200 cursor-pointer transition-colors"
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-200 cursor-pointer transition-colors"
                           title="View & Download Bet Slip"
                         >
                           <Ticket className="w-3.5 h-3.5" />
@@ -599,7 +599,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Header with Title & Action Controls */}
         <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-red-600/10 text-red-600 flex items-center justify-center border border-red-600/20">
+            <div className="w-8 h-8 rounded-xl bg-slate-900/10 text-slate-800 flex items-center justify-center border border-slate-200">
               <BarChart3 className="w-4 h-4 stroke-[2.2]" />
             </div>
             <div>
@@ -608,7 +608,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="hidden sm:inline">Market Performance Analysis (Win & Loss)</span>
                   <span className="sm:hidden">Market Performance</span>
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-red-100 text-red-700 shrink-0">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase font-mono bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
                   {marketBetSummaries.length} Markets
                 </span>
               </div>
@@ -652,7 +652,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setIsPrintModalOpen(true)}
-              className="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
+              className="py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
               title="Print Market Win / Loss Table"
             >
               <Printer className="w-3.5 h-3.5" />

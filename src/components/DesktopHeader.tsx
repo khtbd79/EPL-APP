@@ -1,6 +1,5 @@
 import React from 'react';
 import { ActiveTab, AppState } from '../types';
-import { getThemeConfig } from '../utils/theme';
 import {
   LayoutDashboard,
   Trophy,
@@ -23,113 +22,109 @@ interface NavItem {
   id: ActiveTab;
   label: string;
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  isHot?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'standings', label: 'Standing', icon: Trophy },
-  { id: 'team_data', label: 'Team Data', icon: Database },
+  { id: 'dashboard', label: 'Sports', icon: LayoutDashboard },
+  { id: 'select_match', label: 'In-Play', icon: Trophy, isHot: true },
+  { id: 'compounding', label: 'Compounding', icon: TrendingUp },
   { id: 'all_markets', label: 'All Markets', icon: TrendingUp },
-  { id: 'demo_match', label: 'Match Comparison', icon: Target },
-  { id: 'select_match', label: 'Select Match', icon: Trophy },
-  { id: 'compounding', label: 'COMPAUNDING', icon: TrendingUp },
-  { id: 'overview', label: 'OVER VIEW', icon: Layers },
-  { id: 'report', label: 'Report', icon: FileText },
+  { id: 'standings', label: 'Standings', icon: Trophy },
+  { id: 'team_data', label: 'Team Data', icon: Database },
+  { id: 'demo_match', label: 'Comparison', icon: Target },
+  { id: 'overview', label: 'Overview', icon: Layers },
+  { id: 'report', label: 'Ledger', icon: FileText },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
-/**
- * Top Navbar component for PC / Desktop.
- * Dynamically themed horizontal top navbar with EPL 2026 brand
- * and all navigation options cleanly laid out.
- */
 export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
   activeTab,
   setActiveTab,
-  state,
+  onOpenDownloadModal,
 }) => {
-  const themeConfig = getThemeConfig(state.settings.layoutTheme);
-  const headerBg = themeConfig.isDark ? '#0d1322' : themeConfig.primaryColor;
-  const underlineBg = themeConfig.isDark ? '#38bdf8' : themeConfig.primaryDark;
-
   return (
     <header className="hidden lg:block sticky top-0 z-40 w-full no-print shadow-md">
-      {/* Top Navbar - Single unified horizontal bar */}
-      <div 
-        className="w-full px-4 sm:px-6 transition-colors duration-300"
-        style={{ backgroundColor: headerBg }}
-      >
-        <div className="w-full max-w-[1850px] mx-auto flex items-center justify-between h-16">
-          {/* Brand Title (EPL 2026) - Left aligned, pure white text */}
-          <div
-            onClick={() => setActiveTab('dashboard')}
-            className="flex items-center cursor-pointer select-none shrink-0 pr-4"
-            title="Go to Dashboard"
-          >
-            <span
-              id="epl-brand-title"
-              className="text-2xl xl:text-3xl font-black text-white tracking-tight leading-none drop-shadow-sm select-none"
-              style={{ color: '#ffffff' }}
+      {/* Primary Bet365 Green Header Bar */}
+      <div className="w-full bg-[#126e51] border-b border-[#0c4936]">
+        <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-13">
+            {/* Zone 1: EPL 2026 Logo */}
+            <div
+              onClick={() => setActiveTab('dashboard')}
+              className="flex flex-col items-center justify-center cursor-pointer select-none group py-1"
+              title="EPL 2026 Sports Home"
             >
-              EPL 2026
-            </span>
-          </div>
+              <span className="text-2xl font-black italic tracking-wider bg-gradient-to-r from-white via-[#fffde6] to-[#ffdf1b] bg-clip-text text-transparent epl-brand-glow">
+                EPL 2026
+              </span>
+              {/* Elegant glowing accent line underneath */}
+              <div className="w-full flex items-center justify-center -mt-0.5">
+                <div className="w-full h-[2.5px] rounded-full bg-gradient-to-r from-transparent via-[#ffdf1b] to-transparent epl-glow-underline" />
+              </div>
+            </div>
 
-          {/* All Navigation Options - Aligned horizontally in same row */}
-          <div className="overflow-x-auto no-scrollbar flex items-center space-x-1 shrink py-1">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                activeTab === item.id ||
-                (item.id === 'standings' && activeTab === 'top_teams') ||
-                (item.id === 'all_markets' && activeTab === 'market_trends') ||
-                (item.id === 'demo_match' && activeTab === 'match_select') ||
-                (item.id === 'select_match' && activeTab === 'daily_task') ||
-                (item.id === 'overview' && (activeTab === 'overview' || activeTab === 'over_view')) ||
-                (item.id === 'report' && (activeTab === 'reports' || activeTab === 'history' || activeTab === 'saved_ledger')) ||
-                (item.id === 'settings' && activeTab === 'backup');
+            {/* Zone 2: Navigation Links with bet365 active underlines */}
+            <nav className="overflow-x-auto no-scrollbar flex items-center gap-0.5 shrink py-1 px-2 h-full">
+              {NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive =
+                  activeTab === item.id ||
+                  (item.id === 'standings' && activeTab === 'top_teams') ||
+                  (item.id === 'all_markets' && activeTab === 'market_trends') ||
+                  (item.id === 'demo_match' && activeTab === 'match_select') ||
+                  (item.id === 'select_match' && activeTab === 'daily_task') ||
+                  (item.id === 'overview' && (activeTab === 'overview' || activeTab === 'over_view')) ||
+                  (item.id === 'report' && (activeTab === 'reports' || activeTab === 'history' || activeTab === 'saved_ledger')) ||
+                  (item.id === 'settings' && activeTab === 'backup');
 
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap flex items-center space-x-1.5 transition-all cursor-pointer shrink-0 ${
-                    isActive
-                      ? 'shadow-md font-black'
-                      : 'text-white hover:bg-white/15 text-white/95'
-                  }`}
-                  style={
-                    isActive
-                      ? {
-                          backgroundColor: themeConfig.isDark ? '#38bdf8' : '#ffffff',
-                          color: themeConfig.isDark ? '#090d16' : themeConfig.primaryColor,
-                        }
-                      : undefined
-                  }
-                >
-                  <Icon
-                    className="w-3.5 h-3.5"
-                    style={
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`h-11 px-3 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 relative ${
                       isActive
-                        ? { color: themeConfig.isDark ? '#090d16' : themeConfig.primaryColor }
-                        : { color: '#ffffff' }
-                    }
-                  />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+                        ? 'text-[#ffdf1b] bg-[#0c4936] font-black shadow-2xs'
+                        : 'text-white hover:text-[#ffdf1b] hover:bg-[#15805e]'
+                    }`}
+                  >
+                    <Icon
+                      className={`w-3.5 h-3.5 ${
+                        isActive ? 'text-[#ffdf1b]' : 'text-emerald-200 group-hover:text-[#ffdf1b]'
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                    {item.isHot && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ffdf1b] animate-pulse" />
+                    )}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-2 right-2 h-0.5 bg-[#ffdf1b] rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
       </div>
 
-      {/* Prominent Long Underline Directly Beneath Top Navbar */}
-      <div 
-        className="w-full h-1 shadow-xs transition-colors duration-300" 
-        style={{ backgroundColor: underlineBg }} 
-      />
+      {/* Sub-ribbon with dark forest green */}
+      <div className="w-full bg-[#0c4936] border-b border-[#1b382e] py-1 px-4 sm:px-6">
+        <div className="w-full max-w-[1850px] mx-auto flex items-center justify-between text-[11px] text-emerald-100 font-bold">
+          <div className="flex items-center gap-3">
+            <span className="text-[#ffdf1b] font-black uppercase tracking-wider">
+              Premier League
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 font-mono text-[10px] text-emerald-300">
+            <span>ODDS: DECIMAL</span>
+            <span className="text-emerald-400 font-black bg-[#126e51] px-1.5 py-0.2 rounded text-[#ffdf1b]">
+              LIVE
+            </span>
+          </div>
+        </div>
+      </div>
     </header>
   );
 };
-
-
