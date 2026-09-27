@@ -7,22 +7,14 @@ import {
   TrendingUp,
   RotateCcw,
   Zap,
-  Layers,
-  Flame,
   Check,
   X,
-  Clock,
   Search,
   ChevronRight,
-  Filter,
   DollarSign,
   Calendar,
   Percent,
   Trophy,
-  ArrowRight,
-  ExternalLink,
-  ChevronDown,
-  Sparkles
 } from 'lucide-react';
 
 interface CompoundingViewProps {
@@ -40,6 +32,8 @@ export interface CompoundingTaskData {
   market?: string;
   customOdds?: number;
   customStakePercent?: number;
+  customStakeAmount?: number;
+  stakeMode?: 'fixed' | 'percent';
   status: CompoundingTaskStatus;
   notes?: string;
 }
@@ -61,6 +55,10 @@ export interface DayCompoundingCalculation {
   matchName?: string;
   market?: string;
   notes?: string;
+  hasCustomOdds?: boolean;
+  hasCustomStake?: boolean;
+  customStakeAmount?: number;
+  customStakePercent?: number;
 }
 
 const COMPOUNDING_STORAGE_KEY = 'btts_compounding_plan_v5';
@@ -75,23 +73,20 @@ interface StoredCompoundingState {
   currency?: string;
 }
 
-const COMMON_MARKETS = [
+const POPULAR_MARKETS = [
   'BTTS YES',
   'Over 1.5 Goals',
   'Over 2.5 Goals',
   'Home Win',
   'Away Win',
-  'Draw',
-  '1X (Home or Draw)',
-  'X2 (Away or Draw)',
+  '1X (Home/Draw)',
   'Under 3.5 Goals',
-  'Under 2.5 Goals',
 ];
 
 export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   const currency = state.settings?.currency || 'BDT';
 
-  // Load stored compounding state or initialize defaults (100 deposit, 90 days, 10% daily rate / 1.10 odds)
+  // Load stored compounding state or initialize defaults (100 deposit, 90 days, 1.10 odds / 10%)
   const initialData = getStoredDraft<StoredCompoundingState>(COMPOUNDING_STORAGE_KEY, {
     initialDepositStr: '100',
     totalDays: 90,
@@ -113,22 +108,28 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'PENDING' | 'WIN' | 'LOSS'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
-  const [activePageChunk, setActivePageChunk] = useState<number>(1); // 1 = 1-30, 2 = 31-60, 3 = 61-90, etc.
+  const [activePageChunk, setActivePageChunk] = useState<number>(1);
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig | null>(null);
 
-  // Match Assignment Modal State
+  // Match Assignment & Custom Odds/Stake Modal State
   const [assignModalDay, setAssignModalDay] = useState<number | null>(null);
   const [fixtureSearch, setFixtureSearch] = useState('');
   const [customMatchInput, setCustomMatchInput] = useState('');
   const [selectedMarketInput, setSelectedMarketInput] = useState('');
   const [customOddsInput, setCustomOddsInput] = useState('');
+  const [customStakeInput, setCustomStakeInput] = useState('');
+  const [stakeInputMode, setStakeInputMode] = useState<'fixed' | 'percent'>('fixed');
+
+  // Fast typing drafts for inline inputs
+  const [inlineOddsDrafts, setInlineOddsDrafts] = useState<Record<number, string>>({});
+  const [inlineStakeDrafts, setInlineStakeDrafts] = useState<Record<number, string>>({});
 
   const activeTaskEl = useRef<HTMLElement | null>(null);
   const setActiveTaskRef = (el: HTMLElement | null) => {
     activeTaskEl.current = el;
   };
 
-  // Synchronize Daily Rate % and Target Odds when changed
+  // Sync Daily Rate % and Target Odds
   const handleDailyRateChange = (newRateStr: string) => {
     setDailyRateStr(newRateStr);
     const rate = parseFloat(newRateStr);
@@ -147,7 +148,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     }
   };
 
-  // Persist compounding state on change
+  // Save compounding state
   useEffect(() => {
     setStoredDraft(COMPOUNDING_STORAGE_KEY, {
       initialDepositStr,
@@ -165,7 +166,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   const defaultOdds = Math.max(1.01, parseFloat(defaultOddsStr) || 1.10);
   const stakePercent = Math.min(100, Math.max(1, parseFloat(stakePercentStr) || 100));
 
-  // Flatten EPL fixtures for quick selection
+  // Flatten fixtures for match picker
   const allEplFixtures = useMemo(() => {
     const list: (EPLFixture & { label: string })[] = [];
     EPL_2026_27_FIXTURES.forEach((mw) => {
@@ -180,11 +181,10 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   }, []);
 
   /**
-   * CORE COMPOUNDING ENGINE:
-   * Dynamically compounds day-by-day.
-   * If a day is WIN: Potential profit is added to balance.
-   * If a day is LOSS: The stake amount is deducted from balance.
-   * SUBSEQUENT DAYS AUTOMATICALLY RECALCULATE ON THE NEW REMAINING BALANCE!
+   * CORE COMPOUNDING & CASCADE ENGINE:
+   * Dynamic day-by-day compounding.
+   * Modifying odds or stake on any day instantly updates all subsequent days'
+   * starting balances, profit, stake amounts, and projections!
    */
   const scheduleCalculations = useMemo<DayCompoundingCalculation[]>(() => {
     const list: DayCompoundingCalculation[] = [];
@@ -194,11 +194,29 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
 
     for (let day = 1; day <= daysLimit; day++) {
       const task = tasks[day] || { day, status: 'PENDING' };
-      const dayOdds = task.customOdds !== undefined && task.customOdds >= 1.01 ? task.customOdds : defaultOdds;
-      const dayStakePercent = task.customStakePercent !== undefined ? task.customStakePercent : stakePercent;
+      const hasCustomOdds = task.customOdds !== undefined && task.customOdds >= 1.01;
+      const dayOdds = hasCustomOdds ? task.customOdds! : defaultOdds;
 
       const startBalance = Number(currentBalance.toFixed(2));
-      const stakeAmount = Number((startBalance * (dayStakePercent / 100)).toFixed(2));
+
+      // Calculate Stake: Fixed Custom Stake Amount > Custom Stake Percent > Default Stake Percent
+      let stakeAmount: number;
+      let dayStakePercent: number;
+      const hasCustomStake =
+        (task.customStakeAmount !== undefined && task.customStakeAmount > 0) ||
+        (task.customStakePercent !== undefined && task.customStakePercent > 0);
+
+      if (task.customStakeAmount !== undefined && task.customStakeAmount > 0) {
+        stakeAmount = Number(task.customStakeAmount.toFixed(2));
+        dayStakePercent = startBalance > 0 ? Number(((stakeAmount / startBalance) * 100).toFixed(1)) : 0;
+      } else if (task.customStakePercent !== undefined && task.customStakePercent > 0) {
+        dayStakePercent = task.customStakePercent;
+        stakeAmount = Number((startBalance * (dayStakePercent / 100)).toFixed(2));
+      } else {
+        dayStakePercent = stakePercent;
+        stakeAmount = Number((startBalance * (dayStakePercent / 100)).toFixed(2));
+      }
+
       const potentialProfit = Number((stakeAmount * (dayOdds - 1)).toFixed(2));
 
       let endBalance = startBalance;
@@ -212,14 +230,13 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
         realizedLoss = stakeAmount;
         endBalance = Number(Math.max(0, startBalance - realizedLoss).toFixed(2));
       } else {
-        // PENDING: For forward projection, assume target profit is reached
+        // PENDING: Forward projection reaches target profit
         endBalance = Number((startBalance + potentialProfit).toFixed(2));
       }
 
       const cumulativeProfit = Number((endBalance - initialDeposit).toFixed(2));
-      const growthPercent = initialDeposit > 0
-        ? Number((((endBalance - initialDeposit) / initialDeposit) * 100).toFixed(1))
-        : 0;
+      const growthPercent =
+        initialDeposit > 0 ? Number((((endBalance - initialDeposit) / initialDeposit) * 100).toFixed(1)) : 0;
 
       list.push({
         day,
@@ -238,9 +255,13 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
         matchName: task.matchName,
         market: task.market,
         notes: task.notes,
+        hasCustomOdds,
+        hasCustomStake,
+        customStakeAmount: task.customStakeAmount,
+        customStakePercent: task.customStakePercent,
       });
 
-      // Pass the resulting balance forward to the next day!
+      // Pass resulting balance to next day
       currentBalance = endBalance;
     }
 
@@ -256,7 +277,6 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     const settledCount = wonCount + lostCount;
     const winRate = settledCount > 0 ? Number(((wonCount / settledCount) * 100).toFixed(1)) : 0;
 
-    // Realized live balance: the end balance of the latest settled day, or initial deposit if none settled
     let liveBalance = initialDeposit;
     for (let i = 0; i < scheduleCalculations.length; i++) {
       if (scheduleCalculations[i].isSettled) {
@@ -265,11 +285,13 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     }
 
     const realizedNetPnL = liveBalance - initialDeposit;
-    const finalProjectedBalance = scheduleCalculations.length > 0 ? scheduleCalculations[scheduleCalculations.length - 1].endBalance : initialDeposit;
+    const finalProjectedBalance =
+      scheduleCalculations.length > 0
+        ? scheduleCalculations[scheduleCalculations.length - 1].endBalance
+        : initialDeposit;
     const projectedProfit = finalProjectedBalance - initialDeposit;
-    const projectedMultiplier = initialDeposit > 0 ? (finalProjectedBalance / initialDeposit).toFixed(2) : '0.00';
+    const projectedMultiplier = initialDeposit > 0 ? (finalProjectedBalance / initialDeposit).toFixed(1) : '0.0';
 
-    // First pending day index (the current active challenge day)
     const firstPendingDay = scheduleCalculations.find((c) => c.status === 'PENDING')?.day || 1;
 
     return {
@@ -289,7 +311,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     };
   }, [scheduleCalculations, initialDeposit]);
 
-  // Handlers for Day Task Status
+  // Task Status Toggle
   const handleSetTaskStatus = (day: number, newStatus: CompoundingTaskStatus) => {
     setTasks((prev) => {
       const existing = prev[day] || { day, status: 'PENDING' };
@@ -303,7 +325,101 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     });
   };
 
-  // Open Assign Match Modal for a specific day
+  // Inline Odds update
+  const handleInlineChangeOdds = (day: number, val: string) => {
+    setInlineOddsDrafts((prev) => ({ ...prev, [day]: val }));
+    const num = parseFloat(val);
+    if (!isNaN(num) && num >= 1.01) {
+      setTasks((prev) => {
+        const existing = prev[day] || { day, status: 'PENDING' };
+        return {
+          ...prev,
+          [day]: {
+            ...existing,
+            customOdds: Number(num.toFixed(2)),
+          },
+        };
+      });
+    } else if (val === '') {
+      setTasks((prev) => {
+        const existing = prev[day];
+        if (!existing) return prev;
+        const copy = { ...existing };
+        delete copy.customOdds;
+        return { ...prev, [day]: copy };
+      });
+    }
+  };
+
+  const handleInlineBlurOdds = (day: number) => {
+    setInlineOddsDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[day];
+      return copy;
+    });
+  };
+
+  // Inline Stake update
+  const handleInlineChangeStake = (day: number, val: string) => {
+    setInlineStakeDrafts((prev) => ({ ...prev, [day]: val }));
+    const num = parseFloat(val);
+    if (!isNaN(num) && num > 0) {
+      setTasks((prev) => {
+        const existing = prev[day] || { day, status: 'PENDING' };
+        const updated = {
+          ...existing,
+          customStakeAmount: Number(num.toFixed(2)),
+        };
+        delete updated.customStakePercent;
+        return {
+          ...prev,
+          [day]: updated,
+        };
+      });
+    } else if (val === '') {
+      setTasks((prev) => {
+        const existing = prev[day];
+        if (!existing) return prev;
+        const copy = { ...existing };
+        delete copy.customStakeAmount;
+        delete copy.customStakePercent;
+        return { ...prev, [day]: copy };
+      });
+    }
+  };
+
+  const handleInlineBlurStake = (day: number) => {
+    setInlineStakeDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[day];
+      return copy;
+    });
+  };
+
+  // Reset custom odds and stake for a task back to defaults
+  const handleResetTaskCustomValues = (day: number) => {
+    setInlineOddsDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[day];
+      return copy;
+    });
+    setInlineStakeDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[day];
+      return copy;
+    });
+    setTasks((prev) => {
+      const existing = prev[day];
+      if (!existing) return prev;
+      const copy = { ...existing };
+      delete copy.customOdds;
+      delete copy.customStakeAmount;
+      delete copy.customStakePercent;
+      return { ...prev, [day]: copy };
+    });
+  };
+
+  // Open Assign Match Modal
   const handleOpenAssignModal = (day: number) => {
     const existing = tasks[day];
     setAssignModalDay(day);
@@ -311,55 +427,65 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     setCustomMatchInput(existing?.matchName || '');
     setSelectedMarketInput(existing?.market || 'BTTS YES');
     setCustomOddsInput(existing?.customOdds !== undefined ? String(existing.customOdds) : '');
+    if (existing?.customStakeAmount !== undefined) {
+      setCustomStakeInput(String(existing.customStakeAmount));
+      setStakeInputMode('fixed');
+    } else if (existing?.customStakePercent !== undefined) {
+      setCustomStakeInput(String(existing.customStakePercent));
+      setStakeInputMode('percent');
+    } else {
+      setCustomStakeInput('');
+      setStakeInputMode('fixed');
+    }
   };
 
-  // Save Assigned Match
+  // Save Assigned Match & Custom Odds/Stake
   const handleSaveAssignedMatch = () => {
     if (assignModalDay === null) return;
     const parsedOdds = parseFloat(customOddsInput);
     const validOdds = !isNaN(parsedOdds) && parsedOdds >= 1.01 ? parsedOdds : undefined;
 
+    const parsedStake = parseFloat(customStakeInput);
+    const validStake = !isNaN(parsedStake) && parsedStake > 0 ? parsedStake : undefined;
+
     setTasks((prev) => {
       const existing = prev[assignModalDay] || { day: assignModalDay, status: 'PENDING' };
+      const updated: CompoundingTaskData = {
+        ...existing,
+        matchName: customMatchInput.trim() || undefined,
+        market: selectedMarketInput.trim() || undefined,
+        customOdds: validOdds,
+      };
+
+      if (validStake !== undefined) {
+        if (stakeInputMode === 'fixed') {
+          updated.customStakeAmount = Number(validStake.toFixed(2));
+          delete updated.customStakePercent;
+        } else {
+          updated.customStakePercent = Math.min(100, Math.max(1, validStake));
+          delete updated.customStakeAmount;
+        }
+      } else {
+        delete updated.customStakeAmount;
+        delete updated.customStakePercent;
+      }
+
       return {
         ...prev,
-        [assignModalDay]: {
-          ...existing,
-          matchName: customMatchInput.trim() || undefined,
-          market: selectedMarketInput.trim() || undefined,
-          customOdds: validOdds,
-        },
+        [assignModalDay]: updated,
       };
     });
 
     setAssignModalDay(null);
   };
 
-  // Clear Assigned Match for a day
-  const handleClearAssignedMatch = (day: number) => {
-    setTasks((prev) => {
-      const existing = prev[day];
-      if (!existing) return prev;
-      const copy = { ...existing };
-      delete copy.matchName;
-      delete copy.matchId;
-      delete copy.matchDate;
-      delete copy.market;
-      delete copy.customOdds;
-      return {
-        ...prev,
-        [day]: copy,
-      };
-    });
-  };
-
   // Reset Compounding Plan
   const handleResetPlan = () => {
     setConfirmModal({
       isOpen: true,
-      title: 'Reset Compounding Plan',
-      message: 'This will reset all task statuses to PENDING and clear all match assignments. Do you want to proceed?',
-      confirmLabel: 'Reset All',
+      title: 'Reset Plan',
+      message: 'This will reset all task statuses to PENDING and clear custom values. Continue?',
+      confirmLabel: 'Reset',
       variant: 'danger',
       onConfirm: () => {
         setTasks({});
@@ -367,16 +493,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     });
   };
 
-  // Quick Preset Configurations
-  const handleApplyPreset = (deposit: string, days: number, rate: string, odds: string) => {
-    setInitialDepositStr(deposit);
-    setTotalDays(days);
-    setDailyRateStr(rate);
-    setDefaultOddsStr(odds);
-    setActivePageChunk(1);
-  };
-
-  // Filtered tasks for view
+  // Filter tasks
   const filteredSchedule = useMemo(() => {
     return scheduleCalculations.filter((item) => {
       if (filterStatus === 'PENDING' && item.status !== 'PENDING') return false;
@@ -395,7 +512,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
     });
   }, [scheduleCalculations, filterStatus, searchQuery]);
 
-  // Pagination chunks for 90 days (30 days per chunk)
+  // Pagination chunks (30 days per chunk)
   const chunkSize = 30;
   const totalChunks = Math.max(1, Math.ceil(totalDays / chunkSize));
   const chunkedSchedule = useMemo(() => {
@@ -411,127 +528,59 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
   };
 
   return (
-    <div className="space-y-5 animate-fadeIn pb-36 sm:pb-40 max-w-[1700px] mx-auto">
-      {/* Top Banner / Header Bar */}
-      <div className="solid-card p-5 sm:p-6 bg-white border border-red-100 rounded-2xl shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-xs">
-              <TrendingUp className="w-6 h-6" />
+    <div className="space-y-4 animate-fadeIn pb-24 max-w-[1600px] mx-auto">
+      {/* Top Clean Executive Card */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  COMPAUNDING
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {totalDays}-Day Plan
+                <h1 className="text-lg font-black text-slate-900 tracking-tight">COMPOUNDING</h1>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                  {totalDays}D
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Day {stats.firstPendingDay}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Dynamic daily compound projection with automatic balance recalculation on Win and Loss
-              </p>
             </div>
           </div>
 
-          {/* Quick Actions & Presets */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               type="button"
               onClick={scrollToActiveTask}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Current Task (Day {stats.firstPendingDay})</span>
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Day {stats.firstPendingDay}</span>
             </button>
 
             <button
               type="button"
               onClick={handleResetPlan}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              title="Reset All Tasks"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer"
+              title="Reset Plan"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-              <span>Reset</span>
+              <RotateCcw className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Quick Setup Presets Bar */}
-        <div className="pt-3 border-t border-slate-100 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
-          <span className="text-slate-500 font-bold whitespace-nowrap text-[11px] flex items-center gap-1">
-            <Flame className="w-3.5 h-3.5 text-red-500" /> Quick Presets:
-          </span>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset('100', 90, '10', '1.10')}
-            className={`px-3 py-1 rounded-lg border font-semibold whitespace-nowrap cursor-pointer transition-all ${
-              initialDepositStr === '100' && totalDays === 90 && defaultOddsStr === '1.10'
-                ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-700'
-            }`}
-          >
-            {currency} 100 • 90 Days @ 10% (5,313x)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset('100', 30, '10', '1.10')}
-            className={`px-3 py-1 rounded-lg border font-semibold whitespace-nowrap cursor-pointer transition-all ${
-              initialDepositStr === '100' && totalDays === 30 && defaultOddsStr === '1.10'
-                ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-700'
-            }`}
-          >
-            {currency} 100 • 30 Days @ 10% (17.4x)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset('500', 60, '8', '1.08')}
-            className={`px-3 py-1 rounded-lg border font-semibold whitespace-nowrap cursor-pointer transition-all ${
-              initialDepositStr === '500' && totalDays === 60 && defaultOddsStr === '1.08'
-                ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-700'
-            }`}
-          >
-            {currency} 500 • 60 Days @ 8% (101x)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleApplyPreset('1000', 100, '5', '1.05')}
-            className={`px-3 py-1 rounded-lg border font-semibold whitespace-nowrap cursor-pointer transition-all ${
-              initialDepositStr === '1000' && totalDays === 100 && defaultOddsStr === '1.05'
-                ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-red-300 hover:text-red-700'
-            }`}
-          >
-            {currency} 1,000 • 100 Days @ 5% (131x)
-          </button>
-        </div>
-      </div>
-
-      {/* Main Parameters Configuration Card */}
-      <div className="solid-card p-5 bg-white border border-red-100 rounded-2xl shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h2 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-1.5">
-            <Zap className="w-4 h-4 text-red-600" />
-            <span>Compounding Parameters</span>
-          </h2>
-          <span className="text-[11px] font-bold text-slate-500">
-            Currency: <span className="text-slate-900 font-mono font-black">{currency}</span>
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-          {/* Initial Deposit Input */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <DollarSign className="w-3.5 h-3.5 text-slate-500" />
-              <span>Initial Deposit</span>
-            </label>
+        {/* 4 Clean Parameters */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4">
+          {/* Initial Capital */}
+          <div className="p-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl transition-all">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
+              <span>Capital</span>
+              <span className="text-slate-400 font-mono text-[10px]">{currency}</span>
+            </div>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold font-mono">
-                {currency}
-              </span>
               <input
                 type="number"
                 min="1"
@@ -539,17 +588,33 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                 value={initialDepositStr}
                 onChange={(e) => setInitialDepositStr(e.target.value)}
                 placeholder="100"
-                className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 pl-11 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
+                className="w-full bg-white border border-slate-200 focus:border-slate-900 rounded-lg py-1.5 px-2.5 text-sm font-mono font-black text-slate-900 focus:outline-none transition-all shadow-2xs"
               />
             </div>
           </div>
 
-          {/* Total Days Input */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+          {/* Plan Duration */}
+          <div className="p-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl transition-all">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
               <span>Target Days</span>
-            </label>
+              <div className="flex items-center gap-1">
+                {[30, 60, 90].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setTotalDays(d);
+                      setActivePageChunk(1);
+                    }}
+                    className={`text-[9px] px-1.5 py-0.2 rounded font-mono font-bold transition-all cursor-pointer ${
+                      totalDays === d ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-700'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
             <input
               type="number"
               min="1"
@@ -561,53 +626,36 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                 if (!isNaN(val)) setTotalDays(Math.max(1, Math.min(365, val)));
               }}
               placeholder="90"
-              className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
+              className="w-full bg-white border border-slate-200 focus:border-slate-900 rounded-lg py-1.5 px-2.5 text-sm font-mono font-black text-slate-900 focus:outline-none transition-all shadow-2xs"
             />
-          </div>
-
-          {/* Daily Compounding Rate % */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <Percent className="w-3.5 h-3.5 text-slate-500" />
-              <span>Daily Rate (%)</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                min="0.1"
-                step="0.5"
-                value={dailyRateStr}
-                onChange={(e) => handleDailyRateChange(e.target.value)}
-                placeholder="10"
-                className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 pr-6 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
-              />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">%</span>
-            </div>
           </div>
 
           {/* Target Odds */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
+          <div className="p-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl transition-all">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
               <span>Target Odds</span>
-            </label>
-            <input
-              type="number"
-              min="1.01"
-              step="0.01"
-              value={defaultOddsStr}
-              onChange={(e) => handleDefaultOddsChange(e.target.value)}
-              placeholder="1.10"
-              className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
-            />
+              <span className="text-emerald-600 font-mono text-[10px] font-bold">+{dailyRateStr}%</span>
+            </div>
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">@</span>
+              <input
+                type="number"
+                min="1.01"
+                step="0.01"
+                value={defaultOddsStr}
+                onChange={(e) => handleDefaultOddsChange(e.target.value)}
+                placeholder="1.10"
+                className="w-full bg-white border border-slate-200 focus:border-slate-900 rounded-lg py-1.5 pr-2 pl-7 text-sm font-mono font-black text-slate-900 focus:outline-none transition-all shadow-2xs"
+              />
+            </div>
           </div>
 
-          {/* Reinvest Stake % */}
-          <div className="col-span-2 md:col-span-1 space-y-1">
-            <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-slate-500" />
-              <span>Reinvest Stake (%)</span>
-            </label>
+          {/* Stake % */}
+          <div className="p-3 bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 rounded-xl transition-all">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
+              <span>Stake Ratio</span>
+              <span className="text-slate-400 font-mono text-[10px]">Reinvest</span>
+            </div>
             <div className="relative">
               <input
                 type="number"
@@ -617,158 +665,96 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                 value={stakePercentStr}
                 onChange={(e) => setStakePercentStr(e.target.value)}
                 placeholder="100"
-                className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 pr-6 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
+                className="w-full bg-white border border-slate-200 focus:border-slate-900 rounded-lg py-1.5 pr-6 pl-2.5 text-sm font-mono font-black text-slate-900 focus:outline-none transition-all shadow-2xs"
               />
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">%</span>
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">%</span>
             </div>
           </div>
         </div>
-
-        {/* Days Presets */}
-        <div className="flex items-center gap-1.5 flex-wrap pt-1">
-          <span className="text-[11px] font-bold text-slate-500 mr-1">Period Presets:</span>
-          {[30, 60, 90, 100, 180].map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => {
-                setTotalDays(d);
-                setActivePageChunk(1);
-              }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                totalDays === d
-                  ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-300 hover:border-red-400'
-              }`}
-            >
-              {d} Days
-            </button>
-          ))}
-          <span className="text-[11px] font-bold text-slate-500 mx-1">| Odds:</span>
-          {[1.05, 1.08, 1.10, 1.15, 1.20].map((o) => (
-            <button
-              key={o}
-              type="button"
-              onClick={() => handleDefaultOddsChange(o.toFixed(2))}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                defaultOddsStr === o.toFixed(2)
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-300 hover:border-emerald-400'
-              }`}
-            >
-              @{o.toFixed(2)}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* KPI Cards: Live Real-Time & Projected Milestones */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {/* Initial Deposit */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Initial Deposit</span>
-            <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-          </div>
-          <div className="text-lg sm:text-xl font-black font-mono text-slate-900">
+      {/* KPI Performance Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Initial Capital */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs">
+          <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Initial Capital</div>
+          <div className="text-base sm:text-lg font-black font-mono text-slate-900 mt-1">
             {formatMoney(initialDeposit, currency)}
           </div>
-          <span className="text-[10px] text-slate-500 font-bold block">Starting Capital</span>
+          <div className="text-[11px] font-medium text-slate-400 mt-0.5">Base Deposit</div>
         </div>
 
-        {/* Current Live Balance */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Current Balance</span>
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-          </div>
-          <div className={`text-lg sm:text-xl font-black font-mono ${stats.liveBalance >= initialDeposit ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {formatMoney(stats.liveBalance, currency)}
-          </div>
-          <span className="text-[10px] font-bold text-slate-500 block">
-            P&L: <span className={stats.realizedNetPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+        {/* Live Balance */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs">
+          <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Live Balance</span>
+            <span className={`text-[10px] font-mono font-bold ${stats.realizedNetPnL >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
               {stats.realizedNetPnL >= 0 ? '+' : ''}{formatMoney(stats.realizedNetPnL, currency)}
             </span>
-          </span>
+          </div>
+          <div className={`text-base sm:text-lg font-black font-mono mt-1 ${stats.liveBalance >= initialDeposit ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {formatMoney(stats.liveBalance, currency)}
+          </div>
+          <div className="text-[11px] font-medium text-slate-400 mt-0.5">Realized Net</div>
         </div>
 
-        {/* Final Target Balance (Day N) */}
-        <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Day {totalDays} Target</span>
-            <Trophy className="w-3.5 h-3.5 text-emerald-600" />
+        {/* Target Balance */}
+        <div className="bg-slate-900 text-white rounded-2xl p-3.5 shadow-xs border border-slate-800">
+          <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Day {totalDays} Target</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 font-mono">
+              {stats.projectedMultiplier}x
+            </span>
           </div>
-          <div className="text-lg sm:text-xl font-black font-mono text-emerald-700">
+          <div className="text-base sm:text-lg font-black font-mono text-emerald-400 mt-1">
             {formatMoney(stats.finalProjectedBalance, currency)}
           </div>
-          <span className="text-[10px] text-emerald-800 font-bold block">
-            +{formatMoney(stats.projectedProfit, currency)} ({stats.projectedMultiplier}x)
-          </span>
+          <div className="text-[11px] font-mono text-slate-400 mt-0.5">
+            +{formatMoney(stats.projectedProfit, currency)}
+          </div>
         </div>
 
-        {/* Progress Tracker */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completed Tasks</span>
-            <Check className="w-3.5 h-3.5 text-slate-400" />
+        {/* Performance Record */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs">
+          <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Performance</span>
+            <span className="text-[10px] font-mono font-bold text-slate-700">{stats.winRate}% WR</span>
           </div>
-          <div className="text-lg sm:text-xl font-black font-mono text-slate-900 flex items-center gap-1.5">
-            <span>{stats.settledCount}/{totalDays}</span>
-            <span className="text-xs text-slate-500 font-bold">({stats.progressPercent}%)</span>
+          <div className="flex items-center gap-2 text-sm font-black font-mono mt-1">
+            <span className="text-emerald-600">{stats.wonCount}W</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-rose-600">{stats.lostCount}L</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-amber-500">{stats.pendingCount}P</span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden border border-slate-200">
+          <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden mt-2">
             <div
-              className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+              className="bg-emerald-500 h-full rounded-full transition-all duration-300"
               style={{ width: `${stats.progressPercent}%` }}
             />
           </div>
         </div>
-
-        {/* Win / Loss Record */}
-        <div className="col-span-2 lg:col-span-1 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Record & Win Rate</span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{stats.winRate}%</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-bold font-mono">
-            <span className="text-emerald-600 flex items-center gap-1">
-              <Check className="w-3.5 h-3.5" /> {stats.wonCount} W
-            </span>
-            <span className="text-rose-600 flex items-center gap-1">
-              <X className="w-3.5 h-3.5" /> {stats.lostCount} L
-            </span>
-            <span className="text-amber-600 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" /> {stats.pendingCount} P
-            </span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-bold block">
-            Next: <span className="text-slate-900 font-black">Day {stats.firstPendingDay}</span>
-          </span>
-        </div>
       </div>
 
-      {/* Control Toolbar: Filter, Search, Pagination Chunks, View Mode */}
-      <div className="solid-card p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+      {/* Control Strip */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-2.5 sm:p-3 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-2.5">
         {/* Status Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" /> Status:
-          </span>
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {(['ALL', 'PENDING', 'WIN', 'LOSS'] as const).map((st) => (
             <button
               key={st}
               type="button"
               onClick={() => setFilterStatus(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 filterStatus === st
                   ? st === 'WIN'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                    ? 'bg-emerald-600 text-white shadow-xs'
                     : st === 'LOSS'
-                    ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                    ? 'bg-rose-600 text-white shadow-xs'
                     : st === 'PENDING'
-                    ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
-                    : 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
               }`}
             >
               {st}
@@ -779,50 +765,9 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
           ))}
         </div>
 
-        {/* Search & View Toggle */}
-        <div className="flex items-center gap-2.5">
-          <div className="relative flex-1 md:w-56">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search day or match..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-red-500 shadow-xs"
-            />
-          </div>
-
-          {/* View Toggle */}
-          <div className="flex items-center border border-slate-200 rounded-xl p-0.5 bg-slate-50">
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                viewMode === 'table' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Line by Line
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                viewMode === 'cards' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Cards
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Pagination Chunks Bar (e.g. Days 1-30, 31-60, 61-90) */}
-      {totalChunks > 1 && (
-        <div className="flex items-center justify-between bg-white border border-slate-200 p-2.5 rounded-xl shadow-xs">
-          <span className="text-xs font-bold text-slate-500">
-            Viewing Period:
-          </span>
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        {/* Chunks Switcher (if > 30 days) */}
+        {totalChunks > 1 && (
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
             {Array.from({ length: totalChunks }).map((_, idx) => {
               const chunkNum = idx + 1;
               const startDay = (chunkNum - 1) * chunkSize + 1;
@@ -834,23 +779,59 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                   key={chunkNum}
                   type="button"
                   onClick={() => setActivePageChunk(chunkNum)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      ? 'bg-slate-900 text-white shadow-2xs'
+                      : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                   }`}
                 >
-                  Days {startDay} - {endDay}
+                  {startDay}-{endDay}
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* View: Task Cards View */}
+        {/* Search & View Mode Switcher */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:w-44">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search day or match..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                viewMode === 'table' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Table
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                viewMode === 'cards' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              Cards
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main View: Table or Cards */}
       {viewMode === 'cards' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+        /* Cards View */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {chunkedSchedule.map((row) => {
             const isFirstPending = row.day === stats.firstPendingDay;
             const isWon = row.status === 'WIN';
@@ -861,201 +842,199 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
               <div
                 key={row.day}
                 ref={isFirstPending ? setActiveTaskRef : undefined}
-                className={`solid-card p-4 rounded-2xl border transition-all shadow-sm space-y-3 relative ${
+                className={`bg-white p-4 rounded-2xl border transition-all shadow-2xs space-y-3 ${
                   isWon
-                    ? 'bg-emerald-50/40 border-emerald-300'
+                    ? 'border-emerald-300/80 bg-emerald-50/20'
                     : isLost
-                    ? 'bg-rose-50/40 border-rose-300'
+                    ? 'border-rose-300/80 bg-rose-50/20'
                     : isFirstPending
-                    ? 'bg-white border-amber-400 ring-2 ring-amber-400/40'
-                    : 'bg-white border-slate-200'
+                    ? 'border-amber-400 ring-2 ring-amber-400/20 shadow-xs'
+                    : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
-                {/* Task Header: Day Number, Assigned Match, Status Badges */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-mono text-xs shadow-xs ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-black font-mono text-xs ${
                         isWon
                           ? 'bg-emerald-600 text-white'
                           : isLost
                           ? 'bg-rose-600 text-white'
                           : isFirstPending
                           ? 'bg-amber-500 text-white'
-                          : 'bg-slate-100 border border-slate-300 text-slate-800'
+                          : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       D{String(row.day).padStart(2, '0')}
                     </span>
                     <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-slate-900">
-                          Day {row.day} Task
-                        </span>
-                        {isFirstPending && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
-                            Current
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-500 font-mono font-bold block">
+                      <div className="text-xs font-black text-slate-900">Day {row.day}</div>
+                      <div className="text-[10px] font-mono text-slate-500">
                         Start: {formatMoney(row.startBalance, currency)}
-                      </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* STATUS BUTTONS: PENDING, WIN, LOSS in front of each task */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-xs">
+                  {/* Status 3-Way Buttons */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                     <button
                       type="button"
                       onClick={() => handleSetTaskStatus(row.day, 'PENDING')}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                        isPending
-                          ? 'bg-amber-500 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all ${
+                        isPending ? 'bg-amber-500 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                       }`}
-                      title="Mark Pending"
                     >
-                      <Clock className="w-3 h-3" />
-                      <span>PENDING</span>
+                      P
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSetTaskStatus(row.day, 'WIN')}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                        isWon
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-emerald-700'
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all ${
+                        isWon ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-emerald-700'
                       }`}
-                      title="Mark Win"
                     >
-                      <Check className="w-3 h-3" />
-                      <span>WIN</span>
+                      W
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSetTaskStatus(row.day, 'LOSS')}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                        isLost
-                          ? 'bg-rose-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-rose-700'
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all ${
+                        isLost ? 'bg-rose-600 text-white shadow-2xs' : 'text-slate-600 hover:text-rose-700'
                       }`}
-                      title="Mark Loss"
                     >
-                      <X className="w-3 h-3" />
-                      <span>LOSS</span>
+                      L
                     </button>
                   </div>
                 </div>
 
-                {/* Match Assignment Section */}
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                {/* Match Box */}
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2 text-xs">
                   <div className="min-w-0 flex-1">
                     {row.matchName ? (
-                      <div>
-                        <div className="text-xs font-bold text-slate-900 truncate">
-                          {row.matchName}
-                        </div>
-                        <div className="text-[11px] text-slate-500 font-medium truncate flex items-center gap-1.5 mt-0.5">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 font-bold text-[10px]">
-                            {row.market || 'Selected Market'}
-                          </span>
-                          <span className="font-mono font-bold text-red-600">@{row.odds.toFixed(2)}</span>
-                        </div>
+                      <div className="truncate">
+                        <div className="font-bold text-slate-900 truncate">{row.matchName}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{row.market || 'Target Market'}</div>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-400 font-medium italic">
-                        No match assigned yet
-                      </span>
+                      <span className="text-slate-400 text-xs italic">No fixture assigned</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenAssignModal(row.day)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 shadow-xs transition-all cursor-pointer"
-                    >
-                      {row.matchName ? 'Edit Match' : 'Assign Match'}
-                    </button>
-                    {row.matchName && (
-                      <button
-                        type="button"
-                        onClick={() => handleClearAssignedMatch(row.day)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        title="Remove Match"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenAssignModal(row.day)}
+                    className="text-[11px] font-bold text-slate-700 hover:text-slate-900 px-2 py-1 bg-white border border-slate-200 rounded-lg cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    {row.matchName ? 'Edit' : '+ Assign'}
+                  </button>
+                </div>
+
+                {/* Inline Odds & Stake */}
+                <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div>
+                    <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
+                      <span>Odds</span>
+                      {row.hasCustomOdds && (
+                        <button
+                          type="button"
+                          onClick={() => handleResetTaskCustomValues(row.day)}
+                          className="text-amber-600 hover:text-amber-800 cursor-pointer"
+                          title="Reset"
+                        >
+                          ↺
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="1.01"
+                      value={
+                        inlineOddsDrafts[row.day] !== undefined
+                          ? inlineOddsDrafts[row.day]
+                          : row.hasCustomOdds
+                          ? String(row.odds)
+                          : row.odds.toFixed(2)
+                      }
+                      onChange={(e) => handleInlineChangeOdds(row.day, e.target.value)}
+                      onBlur={() => handleInlineBlurOdds(row.day)}
+                      className={`w-full px-2 py-1 text-center font-mono font-black text-xs rounded-lg border transition-all ${
+                        row.hasCustomOdds
+                          ? 'bg-amber-50 text-amber-900 border-amber-400'
+                          : 'bg-white text-slate-800 border-slate-200 focus:outline-none'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
+                      <span>Stake</span>
+                      {row.hasCustomStake && (
+                        <button
+                          type="button"
+                          onClick={() => handleResetTaskCustomValues(row.day)}
+                          className="text-amber-600 hover:text-amber-800 cursor-pointer"
+                          title="Reset"
+                        >
+                          ↺
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={
+                        inlineStakeDrafts[row.day] !== undefined
+                          ? inlineStakeDrafts[row.day]
+                          : row.hasCustomStake
+                          ? String(row.stakeAmount)
+                          : row.stakeAmount
+                      }
+                      onChange={(e) => handleInlineChangeStake(row.day, e.target.value)}
+                      onBlur={() => handleInlineBlurStake(row.day)}
+                      className={`w-full px-2 py-1 text-right font-mono font-black text-xs rounded-lg border transition-all ${
+                        row.hasCustomStake
+                          ? 'bg-amber-50 text-amber-900 border-amber-400'
+                          : 'bg-white text-slate-800 border-slate-200 focus:outline-none'
+                      }`}
+                    />
                   </div>
                 </div>
 
-                {/* Financial Summary of the Day */}
-                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-100 text-xs">
+                {/* Balance Footer */}
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                   <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Stake ({row.stakePercent}%)</span>
-                    <span className="font-mono font-black text-slate-900">
-                      {formatMoney(row.stakeAmount, currency)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase">
-                      {isLost ? 'Lost Amount' : 'Profit'}
-                    </span>
+                    <span className="text-[10px] text-slate-400 block font-bold">P/L</span>
                     <span className={`font-mono font-black ${isLost ? 'text-rose-600' : 'text-emerald-600'}`}>
                       {isLost ? `-${formatMoney(row.realizedLoss, currency)}` : `+${formatMoney(row.potentialProfit, currency)}`}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-bold block uppercase">End Balance</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">End Balance</span>
                     <span className="font-mono font-black text-slate-900">
                       {formatMoney(row.endBalance, currency)}
                     </span>
                   </div>
-                </div>
-
-                {/* Progress / Cumulative Growth */}
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 pt-1">
-                  <span>Growth: {row.growthPercent >= 0 ? `+${row.growthPercent}%` : `${row.growthPercent}%`}</span>
-                  <span>
-                    Cumulative P&L: <span className={row.cumulativeProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
-                      {row.cumulativeProfit >= 0 ? '+' : ''}{formatMoney(row.cumulativeProfit, currency)}
-                    </span>
-                  </span>
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        /* View: Comprehensive Line-by-Line Table View */
-        <div className="solid-card p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <h3 className="font-black text-slate-900 text-sm flex items-center space-x-2">
-                <Layers className="w-4 h-4 text-red-600" />
-                <span>Line-by-Line Compounding Task Sheet</span>
-              </h3>
-            </div>
-            <span className="text-xs text-slate-500 font-bold">
-              Showing {chunkedSchedule.length} of {scheduleCalculations.length} days
-            </span>
-          </div>
-
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+        /* Table View */
+        <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-700 font-black uppercase tracking-wider border-b border-slate-200 text-[10px]">
+              <thead className="bg-slate-50/80 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/80 text-[10px]">
                 <tr>
-                  <th className="py-3 px-3 w-16">Day</th>
-                  <th className="py-3 px-3">Start Balance</th>
-                  <th className="py-3 px-3 min-w-[200px]">Assigned Match & Market</th>
-                  <th className="py-3 px-2 text-center w-16">Odds</th>
-                  <th className="py-3 px-3">Stake</th>
-                  <th className="py-3 px-3">Profit / Loss</th>
-                  <th className="py-3 px-3">End Balance</th>
-                  <th className="py-3 px-3">Cumulative Growth</th>
-                  <th className="py-3 px-3 text-center min-w-[210px]">Task Status</th>
+                  <th className="py-2.5 px-3 w-12 text-center">Day</th>
+                  <th className="py-2.5 px-3">Start</th>
+                  <th className="py-2.5 px-3 min-w-[200px]">Fixture</th>
+                  <th className="py-2.5 px-2 text-center min-w-[80px]">Odds</th>
+                  <th className="py-2.5 px-3 min-w-[110px]">Stake</th>
+                  <th className="py-2.5 px-3">Profit</th>
+                  <th className="py-2.5 px-3">End Balance</th>
+                  <th className="py-2.5 px-3 text-center min-w-[140px]">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -1071,57 +1050,52 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                       ref={isCurrent ? setActiveTaskRef : undefined}
                       className={`transition-colors ${
                         isWon
-                          ? 'bg-emerald-50/60 hover:bg-emerald-50'
+                          ? 'bg-emerald-50/30 hover:bg-emerald-50/60'
                           : isLost
-                          ? 'bg-rose-50/60 hover:bg-rose-50'
+                          ? 'bg-rose-50/30 hover:bg-rose-50/60'
                           : isCurrent
-                          ? 'bg-amber-50/70 hover:bg-amber-50'
-                          : 'hover:bg-slate-50'
+                          ? 'bg-amber-50/50 hover:bg-amber-50/80'
+                          : 'hover:bg-slate-50/70'
                       }`}
                     >
-                      {/* Day Number */}
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-7 h-7 rounded-lg inline-flex items-center justify-center font-black font-mono text-xs shadow-xs ${
-                              isWon
-                                ? 'bg-emerald-600 text-white'
-                                : isLost
-                                ? 'bg-rose-600 text-white'
-                                : isCurrent
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-slate-100 border border-slate-300 text-slate-800'
-                            }`}
-                          >
-                            D{String(row.day).padStart(2, '0')}
-                          </span>
-                          {isCurrent && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                          )}
-                        </div>
+                      {/* Day */}
+                      <td className="py-2 px-3 text-center">
+                        <span
+                          className={`w-6 h-6 rounded-md inline-flex items-center justify-center font-black font-mono text-[11px] ${
+                            isWon
+                              ? 'bg-emerald-600 text-white'
+                              : isLost
+                              ? 'bg-rose-600 text-white'
+                              : isCurrent
+                              ? 'bg-amber-500 text-white'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
+                        >
+                          {String(row.day).padStart(2, '0')}
+                        </span>
                       </td>
 
                       {/* Start Balance */}
-                      <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                      <td className="py-2 px-3 font-mono font-bold text-slate-900">
                         {formatMoney(row.startBalance, currency)}
                       </td>
 
                       {/* Match Assignment */}
-                      <td className="py-3 px-3">
+                      <td className="py-2 px-3">
                         {row.matchName ? (
                           <div className="flex items-center justify-between gap-2 max-w-xs">
                             <div className="truncate">
-                              <div className="font-bold text-slate-900 truncate">
+                              <span className="font-bold text-slate-900 truncate block">
                                 {row.matchName}
-                              </div>
-                              <span className="text-[10px] text-slate-500 font-semibold truncate block">
+                              </span>
+                              <span className="text-[10px] text-slate-400 truncate block font-medium">
                                 {row.market || 'Target Market'}
                               </span>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleOpenAssignModal(row.day)}
-                              className="text-[10px] font-bold text-slate-500 hover:text-red-600 px-1.5 py-0.5 rounded border border-slate-200 bg-white cursor-pointer shrink-0"
+                              className="text-[10px] font-bold text-slate-500 hover:text-slate-900 px-1.5 py-0.5 rounded border border-slate-200 bg-white cursor-pointer shrink-0"
                             >
                               Edit
                             </button>
@@ -1130,88 +1104,130 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
                           <button
                             type="button"
                             onClick={() => handleOpenAssignModal(row.day)}
-                            className="text-[11px] font-bold text-red-600 hover:text-red-700 underline cursor-pointer flex items-center gap-1"
+                            className="text-[11px] font-bold text-slate-400 hover:text-slate-800 cursor-pointer"
                           >
-                            <span>+ Assign Match</span>
+                            + Assign
                           </button>
                         )}
                       </td>
 
                       {/* Odds */}
-                      <td className="py-3 px-2 text-center font-mono font-bold text-slate-800">
-                        @{row.odds.toFixed(2)}
+                      <td className="py-2 px-2 text-center">
+                        <div className="inline-flex items-center justify-center gap-1">
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="1.01"
+                            value={
+                              inlineOddsDrafts[row.day] !== undefined
+                                ? inlineOddsDrafts[row.day]
+                                : row.hasCustomOdds
+                                ? String(row.odds)
+                                : row.odds.toFixed(2)
+                            }
+                            onChange={(e) => handleInlineChangeOdds(row.day, e.target.value)}
+                            onBlur={() => handleInlineBlurOdds(row.day)}
+                            className={`w-14 px-1 py-0.5 text-center font-mono font-bold text-xs rounded border transition-all ${
+                              row.hasCustomOdds
+                                ? 'bg-amber-50 text-amber-900 border-amber-400 font-black'
+                                : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 focus:outline-none'
+                            }`}
+                          />
+                          {row.hasCustomOdds && (
+                            <button
+                              type="button"
+                              onClick={() => handleResetTaskCustomValues(row.day)}
+                              className="text-amber-600 hover:text-amber-800 p-0.5 cursor-pointer"
+                              title="Reset to default"
+                            >
+                              <RotateCcw className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
 
                       {/* Stake Amount */}
-                      <td className="py-3 px-3 font-mono font-bold text-slate-800">
-                        {formatMoney(row.stakeAmount, currency)}
+                      <td className="py-2 px-3">
+                        <div className="inline-flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="1"
+                            min="1"
+                            value={
+                              inlineStakeDrafts[row.day] !== undefined
+                                ? inlineStakeDrafts[row.day]
+                                : row.hasCustomStake
+                                ? String(row.stakeAmount)
+                                : row.stakeAmount
+                            }
+                            onChange={(e) => handleInlineChangeStake(row.day, e.target.value)}
+                            onBlur={() => handleInlineBlurStake(row.day)}
+                            className={`w-16 px-1.5 py-0.5 text-right font-mono font-bold text-xs rounded border transition-all ${
+                              row.hasCustomStake
+                                ? 'bg-amber-50 text-amber-900 border-amber-400 font-black'
+                                : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 focus:outline-none'
+                            }`}
+                          />
+                          {row.hasCustomStake ? (
+                            <button
+                              type="button"
+                              onClick={() => handleResetTaskCustomValues(row.day)}
+                              className="text-amber-600 hover:text-amber-800 text-[10px] cursor-pointer"
+                              title="Reset"
+                            >
+                              ↺
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {row.stakePercent}%
+                            </span>
+                          )}
+                        </div>
                       </td>
 
-                      {/* Realized Profit / Loss */}
-                      <td className={`py-3 px-3 font-mono font-black ${isLost ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      {/* Profit / Loss */}
+                      <td className={`py-2 px-3 font-mono font-black ${isLost ? 'text-rose-600' : 'text-emerald-600'}`}>
                         {isLost
                           ? `-${formatMoney(row.realizedLoss, currency)}`
                           : isWon
                           ? `+${formatMoney(row.realizedProfit, currency)}`
-                          : `+${formatMoney(row.potentialProfit, currency)} (est)`}
+                          : `+${formatMoney(row.potentialProfit, currency)}`}
                       </td>
 
                       {/* End Balance */}
-                      <td className="py-3 px-3 font-mono font-black text-slate-900">
+                      <td className="py-2 px-3 font-mono font-black text-slate-900">
                         {formatMoney(row.endBalance, currency)}
                       </td>
 
-                      {/* Cumulative Growth */}
-                      <td className="py-3 px-3 font-mono font-bold text-slate-700">
-                        <span className={row.cumulativeProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
-                          {row.cumulativeProfit >= 0 ? '+' : ''}{formatMoney(row.cumulativeProfit, currency)}
-                        </span>
-                        <span className="text-[10px] text-slate-400 ml-1.5 font-bold">
-                          ({row.growthPercent >= 0 ? `+${row.growthPercent}%` : `${row.growthPercent}%`})
-                        </span>
-                      </td>
-
-                      {/* TASK STATUS BUTTONS (PENDING, WIN, LOSS) at the very end of each line */}
-                      <td className="py-3 px-3 text-center">
-                        <div className="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-xs">
+                      {/* Status */}
+                      <td className="py-2 px-3 text-center">
+                        <div className="inline-flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                           <button
                             type="button"
                             onClick={() => handleSetTaskStatus(row.day, 'PENDING')}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                              isPending
-                                ? 'bg-amber-500 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-slate-900'
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                              isPending ? 'bg-amber-500 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                             }`}
-                            title="Mark as Pending"
                           >
-                            <Clock className="w-3 h-3" />
-                            <span>PENDING</span>
+                            P
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSetTaskStatus(row.day, 'WIN')}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                              isWon
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-emerald-700'
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                              isWon ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-emerald-700'
                             }`}
-                            title="Mark as Win"
                           >
-                            <Check className="w-3 h-3" />
-                            <span>WIN</span>
+                            Win
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSetTaskStatus(row.day, 'LOSS')}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                              isLost
-                                ? 'bg-rose-600 text-white shadow-xs'
-                                : 'text-slate-600 hover:text-rose-700'
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                              isLost ? 'bg-rose-600 text-white shadow-2xs' : 'text-slate-600 hover:text-rose-700'
                             }`}
-                            title="Mark as Loss"
                           >
-                            <X className="w-3 h-3" />
-                            <span>LOSS</span>
+                            Loss
                           </button>
                         </div>
                       </td>
@@ -1227,25 +1243,24 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
       {/* MATCH ASSIGNMENT MODAL */}
       {assignModalDay !== null && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fadeIn"
           onClick={() => setAssignModalDay(null)}
         >
           <div
-            className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-scaleUp"
+            className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto animate-scaleUp"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center font-black font-mono text-xs">
+                <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black font-mono text-xs">
                   D{String(assignModalDay).padStart(2, '0')}
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 leading-tight">
-                    Assign Match for Day {assignModalDay}
+                    Day {assignModalDay} Task
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Select an official Premier League fixture or enter custom match details
-                  </p>
+                  <p className="text-xs text-slate-500 font-medium">Fixture & custom parameters</p>
                 </div>
               </div>
               <button
@@ -1257,92 +1272,79 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
               </button>
             </div>
 
-            {/* Custom Match Name Input */}
+            {/* Match Name Input */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">
-                Match Title / Teams
-              </label>
+              <label className="text-xs font-bold text-slate-700">Fixture / Match</label>
               <input
                 type="text"
                 value={customMatchInput}
                 onChange={(e) => setCustomMatchInput(e.target.value)}
                 placeholder="e.g. Arsenal vs Chelsea"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-900 transition-all"
               />
             </div>
 
-            {/* Quick Pick from Official EPL 2026/27 Fixtures */}
+            {/* Quick EPL Fixtures List */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Select from EPL Fixtures</span>
-                <span className="text-[10px] text-slate-400 font-medium">Search club or matchweek</span>
-              </label>
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={fixtureSearch}
                   onChange={(e) => setFixtureSearch(e.target.value)}
-                  placeholder="Filter fixtures (e.g. Arsenal, Liverpool)..."
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 shadow-xs"
+                  placeholder="Search EPL fixtures..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-900"
                 />
               </div>
 
-              {/* Scrollable Fixture Matches List */}
-              <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
+              <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100 bg-slate-50/50">
                 {allEplFixtures
                   .filter((m) => {
-                    if (!fixtureSearch.trim()) return m.matchweek <= 3; // Show initial matchweeks by default
+                    if (!fixtureSearch.trim()) return m.matchweek <= 2;
                     const q = fixtureSearch.toLowerCase();
-                    return m.homeTeam.toLowerCase().includes(q) || m.awayTeam.toLowerCase().includes(q) || `mw ${m.matchweek}`.includes(q);
+                    return (
+                      m.homeTeam.toLowerCase().includes(q) ||
+                      m.awayTeam.toLowerCase().includes(q) ||
+                      `mw ${m.matchweek}`.includes(q)
+                    );
                   })
-                  .slice(0, 15)
+                  .slice(0, 10)
                   .map((m) => (
                     <button
                       key={m.id}
                       type="button"
-                      onClick={() => {
-                        setCustomMatchInput(`${m.homeTeam} vs ${m.awayTeam}`);
-                      }}
-                      className="w-full px-3 py-2 text-left hover:bg-red-50 transition-colors flex items-center justify-between cursor-pointer group text-xs"
+                      onClick={() => setCustomMatchInput(`${m.homeTeam} vs ${m.awayTeam}`)}
+                      className="w-full px-3 py-1.5 text-left hover:bg-slate-100 transition-colors flex items-center justify-between cursor-pointer group text-xs"
                     >
-                      <div className="truncate">
-                        <span className="font-bold text-slate-900 group-hover:text-red-700">
-                          {m.homeTeam} vs {m.awayTeam}
-                        </span>
-                        <span className="text-[10px] text-slate-500 block">
-                          MW {m.matchweek} • {m.dateStr}
-                        </span>
-                      </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-600 shrink-0" />
+                      <span className="font-bold text-slate-800 group-hover:text-slate-900 truncate">
+                        {m.homeTeam} vs {m.awayTeam}
+                      </span>
+                      <span className="text-[10px] text-slate-400 shrink-0 font-mono">MW{m.matchweek}</span>
                     </button>
                   ))}
               </div>
             </div>
 
-            {/* Market Selection */}
+            {/* Target Market */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700">
-                Target Market / Selection
-              </label>
+              <label className="text-xs font-bold text-slate-700">Target Market</label>
               <input
                 type="text"
                 value={selectedMarketInput}
                 onChange={(e) => setSelectedMarketInput(e.target.value)}
-                placeholder="e.g. BTTS YES or Over 1.5 Goals"
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
+                placeholder="e.g. BTTS YES"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-900"
               />
-              {/* Quick Market Pills */}
-              <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                {COMMON_MARKETS.map((mkt) => (
+              <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                {POPULAR_MARKETS.map((mkt) => (
                   <button
                     key={mkt}
                     type="button"
                     onClick={() => setSelectedMarketInput(mkt)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
                       selectedMarketInput === mkt
-                        ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                     }`}
                   >
                     {mkt}
@@ -1351,38 +1353,81 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
               </div>
             </div>
 
-            {/* Custom Odds for this Specific Day */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Specific Odds for Day {assignModalDay} (Optional)</span>
-                <span className="text-[10px] text-slate-500 font-mono">Default: @{defaultOddsStr}</span>
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                min="1.01"
-                value={customOddsInput}
-                onChange={(e) => setCustomOddsInput(e.target.value)}
-                placeholder={defaultOddsStr}
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-red-500 shadow-xs"
-              />
+            {/* Custom Odds & Stake Side-by-Side */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              {/* Odds */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Custom Odds</span>
+                  <span className="text-[10px] text-slate-400 font-mono">@{defaultOddsStr}</span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">@</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="1.01"
+                    value={customOddsInput}
+                    onChange={(e) => setCustomOddsInput(e.target.value)}
+                    placeholder={defaultOddsStr}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-7 pr-2 py-1.5 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* Stake */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Custom Stake</span>
+                  <button
+                    type="button"
+                    onClick={() => setStakeInputMode(stakeInputMode === 'fixed' ? 'percent' : 'fixed')}
+                    className="text-[10px] text-slate-500 hover:text-slate-900 font-mono font-bold cursor-pointer"
+                  >
+                    {stakeInputMode === 'fixed' ? currency : '%'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs font-bold">
+                    {stakeInputMode === 'fixed' ? currency : '%'}
+                  </span>
+                  <input
+                    type="number"
+                    step={stakeInputMode === 'fixed' ? '1' : '5'}
+                    min="1"
+                    max={stakeInputMode === 'percent' ? '100' : undefined}
+                    value={customStakeInput}
+                    onChange={(e) => setCustomStakeInput(e.target.value)}
+                    placeholder={
+                      stakeInputMode === 'fixed'
+                        ? `${formatMoney(
+                            (scheduleCalculations.find((c) => c.day === assignModalDay)?.startBalance || 0) *
+                              (stakePercent / 100),
+                            currency
+                          )}`
+                        : `${stakePercent}%`
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-2 py-1.5 text-xs font-mono font-black text-slate-900 focus:outline-none focus:border-slate-900"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Modal Actions */}
+            {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setAssignModalDay(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveAssignedMatch}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-xs transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition-all cursor-pointer"
               >
-                Save Assignment
+                Save
               </button>
             </div>
           </div>
@@ -1390,10 +1435,7 @@ export const CompoundingView: React.FC<CompoundingViewProps> = ({ state }) => {
       )}
 
       {/* Confirmation Modal */}
-      <ConfirmActionModal
-        config={confirmModal}
-        onClose={() => setConfirmModal(null)}
-      />
+      <ConfirmActionModal config={confirmModal} onClose={() => setConfirmModal(null)} />
     </div>
   );
 };
