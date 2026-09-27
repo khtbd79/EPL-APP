@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'all_markets', label: 'All Markets', icon: TrendingUp },
   { id: 'demo_match', label: 'Match Comparison', icon: Target },
   { id: 'select_match', label: 'Select Match', icon: Trophy },
+  { id: 'compounding', label: 'COMPAUNDING', icon: TrendingUp },
   { id: 'overview', label: 'OVER VIEW', icon: Layers },
   { id: 'report', label: 'Report', icon: FileText },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },

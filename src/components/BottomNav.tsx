@@ -48,6 +48,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
   };
 
   const moreMenuItems = [
+    { id: 'compounding' as ActiveTab, label: 'COMPAUNDING', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
     { id: 'standings' as ActiveTab, label: 'Standing', icon: <Trophy className="w-5 h-5" />, color: 'amber' },
     { id: 'team_data' as ActiveTab, label: 'Team Data', icon: <Database className="w-5 h-5" />, color: 'red' },
     { id: 'all_markets' as ActiveTab, label: 'All Markets', icon: <TrendingUp className="w-5 h-5" />, color: 'emerald' },
@@ -214,12 +215,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
           <button
             onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
             className={`flex flex-col items-center justify-center flex-1 py-1.5 transition-all active:scale-95 cursor-pointer ${
-              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
+              isMoreMenuOpen || ['compounding', 'report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
                 ? 'font-bold'
                 : themeConfig.isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'
             }`}
             style={
-              isMoreMenuOpen || ['report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
+              isMoreMenuOpen || ['compounding', 'report', 'reports', 'settings', 'all_markets', 'overview', 'over_view'].includes(activeTab)
                 ? { color: themeConfig.primaryColor }
                 : undefined
             }
