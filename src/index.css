@@ -1,27 +1,21 @@
 @import "tailwindcss";
 
-/* Universal bulletproof typography system */
+/* Universal typography system */
 :root {
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'Roboto Mono', Menlo, Monaco, Consolas, monospace;
 
-  /* Authentic Bet365 Signature Theme Palette */
-  --bet365-green: #126e51;
-  --bet365-green-dark: #0c4936;
-  --bet365-green-light: #168a65;
-  --bet365-yellow: #ffdf1b;
-  --bet365-yellow-hover: #ffe438;
-  --bet365-dark-bg: #1f2228;
-  --bet365-card-bg: #282b32;
-  --bet365-card-border: #383d47;
-  --bet365-odds-bg: #383d47;
-
-  /* Theme variables default (Bet365 Sportsbook Pro) */
+  /* Dynamic Theme Variables - Adapted seamlessly per chosen Bookmaker */
   --theme-primary: #126e51;
   --theme-primary-hover: #158360;
   --theme-primary-dark: #0c4936;
   --theme-primary-light: #1f332c;
+  --theme-secondary: #ffdf1b;
+  --theme-secondary-hover: #ffe438;
   --theme-border: #383d47;
+  --theme-surface-bg: #1f2228;
+  --theme-card-bg: #282b32;
+  --theme-sidebar-bg: #181a1f;
   --card-bg: #282b32;
   --card-border: #383d47;
   --card-text: #f8fafc;
@@ -40,7 +34,7 @@ html, body {
   -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--surface-bg, #1f2228);
+  background-color: var(--theme-surface-bg, #1f2228);
   color: var(--surface-text, #f8fafc);
 }
 
@@ -49,20 +43,20 @@ button, a, select, input, textarea {
   font-family: inherit;
 }
 
-/* Bet365 Sleek Scrollbar */
+/* Sleek Scrollbar adapting to active bookmaker theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #181a1f;
+  background: var(--theme-surface-bg, #181a1f);
 }
 ::-webkit-scrollbar-thumb {
-  background: #3e4450;
+  background: var(--theme-border, #3e4450);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ffdf1b;
+  background: var(--theme-secondary, #ffdf1b);
 }
 
 /* Numeric & currency display consistency */
@@ -72,10 +66,10 @@ button, a, select, input, textarea {
 }
 
 @layer utilities {
-  /* Bet365 Sportsbook Cards */
+  /* Bookmaker Sportsbook Cards */
   .solid-card, .glass-card {
-    background-color: var(--card-bg, #282b32);
-    border: 1px solid var(--card-border, #383d47);
+    background-color: var(--theme-card-bg, #282b32);
+    border: 1px solid var(--theme-border, #383d47);
     border-radius: 14px;
     box-shadow: 0 2px 6px 0 rgb(0 0 0 / 0.35);
     position: relative;
@@ -86,29 +80,30 @@ button, a, select, input, textarea {
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .solid-card-hover:hover, .glass-card-hover:hover {
-    border-color: #ffdf1b;
-    box-shadow: 0 4px 14px -2px rgba(255, 223, 27, 0.2);
+    border-color: var(--theme-secondary, #ffdf1b);
+    box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
   }
 
-  /* Bet365 Inputs */
+  /* Bookmaker Form Inputs */
   .solid-input, .glass-input {
-    background-color: #1a1c22;
-    border: 1px solid #383d47;
+    background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 70%, black 30%);
+    border: 1px solid var(--theme-border, #383d47);
     color: #ffffff;
     border-radius: 10px;
     transition: all 0.16s ease;
   }
   .solid-input:focus, .glass-input:focus {
     outline: none;
-    border-color: #ffdf1b;
-    box-shadow: 0 0 0 2px rgba(255, 223, 27, 0.25);
+    border-color: var(--theme-secondary, #ffdf1b);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-secondary, #ffdf1b) 30%, transparent);
   }
 
-  /* Bet365 Odds Button Box */
-  .bet365-odds-box {
-    background-color: #383d47;
-    border: 1px solid #4a505c;
-    color: #ffdf1b;
+  /* Dynamic Bookmaker Odds Button Box */
+  .bet365-odds-box,
+  .bookie-odds-box {
+    background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 75%, black 25%);
+    border: 1px solid var(--theme-border, #383d47);
+    color: var(--theme-secondary, #ffdf1b);
     font-family: var(--font-mono);
     font-weight: 800;
     border-radius: 6px;
@@ -119,70 +114,195 @@ button, a, select, input, textarea {
     transition: all 0.15s ease;
     cursor: pointer;
   }
-  .bet365-odds-box:hover {
-    background-color: #454c59;
-    border-color: #ffdf1b;
+  .bet365-odds-box:hover,
+  .bookie-odds-box:hover {
+    background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 55%, black 45%);
+    border-color: var(--theme-secondary, #ffdf1b);
   }
-  .bet365-odds-box.selected, .bet365-odds-box:active {
-    background-color: #ffdf1b !important;
-    color: #121417 !important;
-    border-color: #ffdf1b !important;
+  .bet365-odds-box.selected,
+  .bet365-odds-box:active,
+  .bookie-odds-box.selected,
+  .bookie-odds-box:active {
+    background-color: var(--theme-primary, #126e51) !important;
+    color: #ffffff !important;
+    border-color: var(--theme-secondary, #ffdf1b) !important;
   }
 }
 
-/* Comprehensive Dark Sportsbook Palette Overrides for bet365 */
-html.dark {
-  background-color: var(--surface-bg, #1f2228);
+/* ==========================================================================
+   AUTHENTIC BOOKMAKER THEME ENGINE
+   Transforms ALL views, cards, panels, inputs, tables, and buttons
+   into the exact design archetype of the selected bookmaker site.
+   ========================================================================== */
+
+html.dark,
+body.bookie-theme,
+.bookie-theme {
+  background-color: var(--theme-surface-bg, #1f2228) !important;
   color: #f1f5f9;
 }
+
 html.dark body {
-  background-color: var(--surface-bg, #1f2228);
+  background-color: var(--theme-surface-bg, #1f2228) !important;
   color: #f1f5f9;
 }
 
-html.dark .bg-white {
-  background-color: #282b32 !important;
-  color: #f8fafc;
+/* All main cards & containers adopt the bookmaker's card background */
+html.dark .bg-white,
+.bookie-theme .bg-white,
+html.dark .solid-card,
+.bookie-theme .solid-card,
+html.dark .glass-card,
+.bookie-theme .glass-card {
+  background-color: var(--theme-card-bg, #282b32) !important;
+  color: #f8fafc !important;
+  border-color: var(--theme-border, #383d47) !important;
 }
-html.dark .text-slate-900 {
-  color: #ffffff !important;
+
+/* Secondary / nested sub-panels, headers, and section boxes */
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/70,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/90,
+html.dark .bg-slate-100,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+.bookie-theme .bg-slate-50,
+.bookie-theme .bg-slate-50\/50,
+.bookie-theme .bg-slate-50\/70,
+.bookie-theme .bg-slate-50\/80,
+.bookie-theme .bg-slate-50\/90,
+.bookie-theme .bg-slate-100,
+.bookie-theme .bg-slate-200\/60,
+.bookie-theme .bg-gray-50,
+.bookie-theme .bg-gray-100 {
+  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 75%, black 25%) !important;
+  border-color: var(--theme-border, #383d47) !important;
 }
-html.dark .text-slate-800 {
-  color: #f1f5f9 !important;
-}
-html.dark .text-slate-700 {
-  color: #cbd5e1 !important;
-}
-html.dark .text-slate-600 {
-  color: #94a3b8 !important;
-}
+
+/* Borders adapt across all components */
 html.dark .border-slate-200,
 html.dark .border-slate-200\/80,
 html.dark .border-slate-200\/90,
-html.dark .border-slate-100 {
-  border-color: #383d47 !important;
+html.dark .border-slate-100,
+html.dark .border-slate-300,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-red-100,
+html.dark .border-red-200,
+html.dark .border-emerald-200,
+.bookie-theme .border-slate-200,
+.bookie-theme .border-slate-200\/80,
+.bookie-theme .border-slate-200\/90,
+.bookie-theme .border-slate-100,
+.bookie-theme .border-slate-300,
+.bookie-theme .border-gray-200,
+.bookie-theme .border-gray-300,
+.bookie-theme .border-red-100,
+.bookie-theme .border-red-200,
+.bookie-theme .border-emerald-200 {
+  border-color: var(--theme-border, #383d47) !important;
 }
-html.dark .bg-slate-50,
-html.dark .bg-slate-50\/50,
-html.dark .bg-slate-50\/80,
-html.dark .bg-slate-50\/90,
-html.dark .bg-slate-100 {
-  background-color: #1e2026 !important;
-}
-html.dark .hover\:bg-slate-50:hover,
-html.dark .hover\:bg-slate-100:hover {
-  background-color: #343844 !important;
-}
+
+/* Dividers */
 html.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #383d47 !important;
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+.bookie-theme .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+.bookie-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.bookie-theme .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--theme-border, #383d47) !important;
 }
-html.dark input,
+
+/* High contrast typography adjustments */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+.bookie-theme .text-slate-900,
+.bookie-theme .text-slate-800,
+.bookie-theme .text-gray-900,
+.bookie-theme .text-gray-800 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600,
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+.bookie-theme .text-slate-700,
+.bookie-theme .text-slate-600,
+.bookie-theme .text-gray-700,
+.bookie-theme .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400,
+html.dark .text-gray-500,
+.bookie-theme .text-slate-500,
+.bookie-theme .text-slate-400,
+.bookie-theme .text-gray-500 {
+  color: #94a3b8 !important;
+}
+
+/* Form inputs, selects & dropdowns */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark select,
-html.dark textarea {
-  background-color: #1a1c22 !important;
-  border-color: #383d47 !important;
+html.dark textarea,
+.bookie-theme input:not([type="checkbox"]):not([type="radio"]),
+.bookie-theme select,
+.bookie-theme textarea {
+  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 70%, black 30%) !important;
+  border-color: var(--theme-border, #383d47) !important;
   color: #ffffff !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder,
+.bookie-theme input::placeholder,
+.bookie-theme textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus,
+.bookie-theme input:focus,
+.bookie-theme select:focus,
+.bookie-theme textarea:focus {
+  border-color: var(--theme-secondary, #ffdf1b) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-secondary, #ffdf1b) 30%, transparent) !important;
+}
+
+/* Primary Action Buttons adopt the bookmaker's primary signature brand */
+html.dark .bg-slate-900,
+.bookie-theme .bg-slate-900 {
+  background-color: var(--theme-primary, #126e51) !important;
+  color: #ffffff !important;
+  border-color: var(--theme-primary-dark, #0c4936) !important;
+}
+
+html.dark .bg-slate-900:hover,
+html.dark .hover\:bg-slate-800:hover,
+.bookie-theme .bg-slate-900:hover,
+.bookie-theme .hover\:bg-slate-800:hover {
+  background-color: var(--theme-primary-hover, #158360) !important;
+  color: #ffffff !important;
+}
+
+/* Table rows alternating & hovers */
+html.dark tr:hover,
+.bookie-theme tr:hover {
+  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 80%, white 10%) !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover,
+.bookie-theme .hover\:bg-slate-50:hover,
+.bookie-theme .hover\:bg-slate-100:hover {
+  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 70%, white 10%) !important;
 }
 
 /* Match Form Result Badges: W = Emerald, D = Orange, L = Rose */
@@ -225,93 +345,3 @@ html.dark textarea {
 .animate-scaleUp {
   animation: scaleUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* ==========================================================================
-   COMPLETE BOOKIE SPORTSBOOK THEME ENGINE
-   Transforms the entire application interface into authentic bookmaker design
-   (dark pitch canvas, themed cards, dark borders, and vibrant odds accents)
-   ========================================================================== */
-
-.bookie-theme {
-  background-color: var(--theme-surface-bg, #1f2228) !important;
-  color: #f1f5f9;
-}
-
-/* All cards & containers become the bookie's card background */
-.bookie-theme .bg-white {
-  background-color: var(--theme-card-bg, #282b32) !important;
-  color: #f8fafc;
-  border-color: var(--theme-border, #383d47);
-}
-
-/* Secondary / nested panels and table headers become subtle card surface */
-.bookie-theme .bg-slate-50,
-.bookie-theme .bg-slate-100,
-.bookie-theme .bg-slate-200\/60,
-.bookie-theme .bg-gray-50,
-.bookie-theme .bg-gray-100 {
-  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 75%, black 25%) !important;
-  border-color: var(--theme-border, #383d47);
-}
-
-/* Borders adapt to the bookie's custom border color */
-.bookie-theme .border-slate-200,
-.bookie-theme .border-slate-300,
-.bookie-theme .border-slate-100,
-.bookie-theme .border-gray-200,
-.bookie-theme .border-gray-300,
-.bookie-theme .border-red-100,
-.bookie-theme .border-emerald-200 {
-  border-color: var(--theme-border, #383d47) !important;
-}
-
-.bookie-theme .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
-.bookie-theme .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--theme-border, #383d47) !important;
-}
-
-/* Text adjustments for dark sports betting contrast */
-.bookie-theme .text-slate-900,
-.bookie-theme .text-slate-800,
-.bookie-theme .text-gray-900,
-.bookie-theme .text-gray-800 {
-  color: #f8fafc !important;
-}
-
-.bookie-theme .text-slate-700,
-.bookie-theme .text-slate-600,
-.bookie-theme .text-gray-700,
-.bookie-theme .text-gray-600 {
-  color: #cbd5e1 !important;
-}
-
-.bookie-theme .text-slate-500,
-.bookie-theme .text-slate-400,
-.bookie-theme .text-gray-500 {
-  color: #94a3b8 !important;
-}
-
-/* Form inputs, selects & dropdowns */
-.bookie-theme input:not([type="checkbox"]):not([type="radio"]),
-.bookie-theme select,
-.bookie-theme textarea {
-  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 70%, black 30%) !important;
-  color: #ffffff !important;
-  border-color: var(--theme-border, #383d47) !important;
-}
-
-.bookie-theme input::placeholder,
-.bookie-theme textarea::placeholder {
-  color: #64748b !important;
-}
-
-/* Table rows alternating & hovers */
-.bookie-theme tr:hover {
-  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 80%, white 20%) !important;
-}
-
-.bookie-theme .hover\:bg-slate-50:hover,
-.bookie-theme .hover\:bg-slate-100:hover {
-  background-color: color-mix(in srgb, var(--theme-card-bg, #282b32) 70%, white 10%) !important;
-}
-

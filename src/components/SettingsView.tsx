@@ -332,7 +332,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   World Bookmaker Themes
                 </h2>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-mono">
-                  Top 10 Bookies
+                  Pro Editions ({THEME_LIST.length})
                 </span>
               </div>
             </div>
@@ -354,7 +354,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* 10 Themes Grid */}
+        {/* Themes Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {THEME_LIST.map((theme) => {
             const isCurrent = selectedTheme === theme.id;
@@ -371,17 +371,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   isCurrent
                     ? {
                         borderColor: theme.primaryColor,
-                        backgroundColor: theme.isDark ? '#0f172a' : '#ffffff',
+                        backgroundColor: theme.cardBgHex,
+                        boxShadow: `0 8px 24px -4px ${theme.primaryColor}40`,
                       }
                     : {
-                        backgroundColor: theme.isDark ? '#0f172a' : '#ffffff',
+                        borderColor: theme.borderHex,
+                        backgroundColor: theme.cardBgHex,
                       }
                 }
               >
                 {/* Active Check Badge */}
                 {isCurrent && (
                   <div 
-                    className="absolute -top-2.5 -right-2 px-2 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center space-x-1 animate-scaleUp z-10"
+                    className="absolute -top-2.5 -right-2 px-2.5 py-0.5 rounded-full text-[10px] font-black text-white shadow-md flex items-center space-x-1 animate-scaleUp z-10"
                     style={{ backgroundColor: theme.primaryColor }}
                   >
                     <Check className="w-3 h-3 stroke-[3]" />
@@ -391,18 +393,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
                 {/* Dark Mode Ribbon Badge */}
                 {theme.isDark && !isCurrent && (
-                  <div className="absolute -top-2 -right-1.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-slate-900 text-sky-300 border border-slate-700 shadow-sm flex items-center space-x-1 z-10">
+                  <div 
+                    className="absolute -top-2 -right-1.5 px-2 py-0.5 rounded-full text-[9px] font-black border shadow-sm flex items-center space-x-1 z-10"
+                    style={{
+                      backgroundColor: theme.surfaceBgHex,
+                      color: theme.secondarySwatchHex || '#ffffff',
+                      borderColor: theme.borderHex,
+                    }}
+                  >
                     <Moon className="w-2.5 h-2.5" />
-                    <span>Dark Theme</span>
+                    <span>{theme.archetype}</span>
                   </div>
                 )}
 
                 <div>
                   {/* Visual Mini Mockup Bar */}
                   <div 
-                    className="w-full h-10 rounded-xl overflow-hidden mb-3 border shadow-xs flex flex-col justify-between p-1.5 relative transition-transform group-hover:scale-[1.02]"
+                    className="w-full h-11 rounded-xl overflow-hidden mb-3 border shadow-xs flex flex-col justify-between p-1.5 relative transition-transform group-hover:scale-[1.02]"
                     style={{
-                      backgroundColor: theme.isDark ? '#090d16' : theme.primaryLight,
+                      backgroundColor: theme.surfaceBgHex,
                       borderColor: theme.borderHex,
                     }}
                   >
@@ -411,21 +420,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className="w-full h-4 rounded-md px-2 flex items-center justify-between"
                       style={{ backgroundColor: theme.primaryColor }}
                     >
-                      <span className="text-[8px] font-black text-white tracking-wider">EPL 26</span>
+                      <span 
+                        className="text-[8px] font-black tracking-wider"
+                        style={{ color: theme.secondarySwatchHex || '#ffffff' }}
+                      >
+                        {theme.archetype}
+                      </span>
                       <div className="flex space-x-0.5">
-                        <div className="w-1 h-1 rounded-full bg-white/70" />
-                        <div className="w-1 h-1 rounded-full bg-white/70" />
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.secondarySwatchHex || '#ffffff' }} />
                       </div>
                     </div>
                     {/* Mockup Body Elements */}
                     <div className="flex items-center space-x-1 px-1">
                       <div 
-                        className="w-3 h-1.5 rounded-xs"
-                        style={{ backgroundColor: theme.primaryColor, opacity: 0.8 }}
+                        className="w-6 h-2 rounded-xs"
+                        style={{ backgroundColor: theme.cardBgHex, border: `1px solid ${theme.borderHex}` }}
                       />
                       <div 
-                        className="w-5 h-1.5 rounded-xs"
-                        style={{ backgroundColor: theme.isDark ? '#334155' : '#cbd5e1' }}
+                        className="w-4 h-2 rounded-xs"
+                        style={{ backgroundColor: theme.secondarySwatchHex || theme.primaryColor }}
                       />
                     </div>
                   </div>

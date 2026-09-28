@@ -73,17 +73,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Navigation */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 z-50 h-screen w-72 shrink-0 border-r border-[#292c34] flex flex-col justify-between p-4 transform transition-transform duration-300 ease-in-out select-none shadow-2xl bg-[#181a1f] text-white ${
+        className={`lg:hidden fixed top-0 left-0 z-50 h-screen w-72 shrink-0 border-r flex flex-col justify-between p-4 transform transition-transform duration-300 ease-in-out select-none shadow-2xl text-white ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
+        style={{
+          backgroundColor: theme.sidebarBg || theme.surfaceBgHex,
+          borderRightColor: theme.borderHex,
+        }}
       >
         {/* Top Branding */}
-        <div className="pb-3 border-b border-[#292c34]">
+        <div 
+          className="pb-3 border-b flex items-center justify-between"
+          style={{ borderBottomColor: theme.borderHex }}
+        >
           <div
             onClick={() => handleNavClick('dashboard')}
             className="inline-flex items-center cursor-pointer py-1 group"
           >
-            <span className="text-2xl font-black italic tracking-wider text-black select-none transition-colors duration-300">
+            <span 
+              className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300"
+              style={{ color: theme.secondarySwatchHex || '#ffffff' }}
+            >
               EPL 2026
             </span>
           </div>
@@ -124,8 +134,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div
                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
                     style={{
-                      backgroundColor: isActive ? theme.primaryDark : '#252830',
-                      color: isActive ? (theme.secondarySwatchHex || '#ffdf1b') : '#94a3b8',
+                      backgroundColor: isActive ? theme.primaryDark : 'rgba(0, 0, 0, 0.25)',
+                      color: isActive ? (theme.secondarySwatchHex || '#ffffff') : '#94a3b8',
                     }}
                   >
                     {item.icon}
@@ -135,13 +145,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {item.isHot && !isActive && (
                   <span 
                     className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: theme.secondarySwatchHex || '#ffdf1b' }}
+                    style={{ backgroundColor: theme.secondarySwatchHex || theme.primaryColor }}
                   />
                 )}
                 {isActive && (
                   <ChevronRight 
                     className="w-3.5 h-3.5 shrink-0"
-                    style={{ color: theme.secondarySwatchHex || '#ffdf1b' }}
+                    style={{ color: theme.secondarySwatchHex || '#ffffff' }}
                   />
                 )}
               </button>
@@ -150,7 +160,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Actions: Download App */}
-        <div className="pt-3 border-t border-[#292c34]">
+        <div 
+          className="pt-3 border-t"
+          style={{ borderTopColor: theme.borderHex }}
+        >
           <button
             type="button"
             onClick={() => {
@@ -159,17 +172,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onOpenDownloadModal();
               }
             }}
-            className="w-full p-2.5 rounded-xl bg-[#ffdf1b] hover:bg-[#ffe543] text-slate-950 font-black transition-all flex items-center justify-between group shadow-sm cursor-pointer"
+            className="w-full p-2.5 rounded-xl font-black transition-all flex items-center justify-between group shadow-sm cursor-pointer"
+            style={{
+              backgroundColor: theme.secondarySwatchHex || theme.primaryColor,
+              color: theme.isDark ? '#090d16' : '#ffffff',
+            }}
           >
             <div className="flex items-center space-x-2.5 min-w-0">
-              <Download className="w-4 h-4 text-slate-950 shrink-0 stroke-[2.5]" />
+              <Download className="w-4 h-4 shrink-0 stroke-[2.5]" />
               <div className="text-left truncate">
                 <div className="text-xs font-black">
                   Download EPL2026 App
                 </div>
               </div>
             </div>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/10 text-slate-950">
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-black/15">
               APK
             </span>
           </button>

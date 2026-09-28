@@ -66,20 +66,27 @@ export default function App() {
 
   // Dynamically update CSS variables on document root when activeTheme changes
   useEffect(() => {
-    if (typeof document !== 'undefined') {
+    if (typeof document !== 'undefined' && activeTheme) {
       const root = document.documentElement;
+      root.setAttribute('data-theme', activeTheme.id);
+      root.classList.toggle('dark', !!activeTheme.isDark);
       root.style.setProperty('--theme-primary', activeTheme.primaryColor);
       root.style.setProperty('--theme-primary-hover', activeTheme.primaryHover);
       root.style.setProperty('--theme-primary-dark', activeTheme.primaryDark);
       root.style.setProperty('--theme-primary-light', activeTheme.primaryLight);
+      root.style.setProperty('--theme-secondary', activeTheme.secondarySwatchHex);
+      root.style.setProperty('--theme-secondary-hover', activeTheme.secondarySwatchHex);
       root.style.setProperty('--theme-border', activeTheme.borderHex);
       root.style.setProperty('--theme-surface-bg', activeTheme.surfaceBgHex);
       root.style.setProperty('--theme-card-bg', activeTheme.cardBgHex);
-      root.style.setProperty('--theme-secondary', activeTheme.secondarySwatchHex);
+      root.style.setProperty('--theme-sidebar-bg', activeTheme.sidebarBg || activeTheme.surfaceBgHex);
       root.style.setProperty('--card-bg', activeTheme.cardBgHex);
       root.style.setProperty('--card-border', activeTheme.borderHex);
       root.style.setProperty('--surface-bg', activeTheme.surfaceBgHex);
+      root.style.setProperty('--card-text', activeTheme.isDark ? '#f8fafc' : '#0f172a');
+      root.style.setProperty('--surface-text', activeTheme.isDark ? '#f8fafc' : '#0f172a');
       document.body.style.backgroundColor = activeTheme.surfaceBgHex;
+      root.style.backgroundColor = activeTheme.surfaceBgHex;
       document.body.classList.add('bookie-theme');
     }
   }, [activeTheme]);
@@ -203,26 +210,6 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [activeTab]);
-
-  // Sync theme CSS custom properties & dark mode class
-  useEffect(() => {
-    if (activeTheme) {
-      document.documentElement.setAttribute('data-theme', activeTheme.id);
-      document.documentElement.classList.toggle('dark', !!activeTheme.isDark);
-      document.documentElement.style.setProperty('--theme-primary', activeTheme.primaryColor);
-      document.documentElement.style.setProperty('--theme-primary-hover', activeTheme.primaryHover);
-      document.documentElement.style.setProperty('--theme-primary-dark', activeTheme.primaryDark);
-      document.documentElement.style.setProperty('--theme-primary-light', activeTheme.primaryLight);
-      document.documentElement.style.setProperty('--theme-border', activeTheme.borderHex);
-      document.documentElement.style.setProperty('--card-bg', activeTheme.cardBgHex);
-      document.documentElement.style.setProperty('--card-border', activeTheme.borderHex);
-      document.documentElement.style.setProperty('--card-text', activeTheme.isDark ? '#f1f5f9' : '#0f172a');
-      document.documentElement.style.setProperty('--surface-bg', activeTheme.surfaceBgHex);
-      document.documentElement.style.setProperty('--surface-text', activeTheme.isDark ? '#f1f5f9' : '#0f172a');
-      document.body.style.backgroundColor = activeTheme.surfaceBgHex;
-      document.documentElement.style.backgroundColor = activeTheme.surfaceBgHex;
-    }
-  }, [activeTheme]);
 
   // Handlers for Match Record Tasks
   const handleRecordMatch = (match: MatchRecord) => {

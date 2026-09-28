@@ -47,7 +47,10 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             onClick={() => setActiveTab('dashboard')}
             title="EPL 2026"
           >
-            <span className="text-xl font-black italic tracking-wider text-black select-none transition-colors duration-300">
+            <span 
+              className="text-xl font-black italic tracking-wider select-none transition-colors duration-300"
+              style={{ color: theme.secondarySwatchHex || '#ffffff' }}
+            >
               EPL 2026
             </span>
           </div>
