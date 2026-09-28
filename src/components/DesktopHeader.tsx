@@ -64,20 +64,13 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
               className="flex items-center justify-center cursor-pointer select-none group py-1"
               title="EPL 2026 Sports Home"
             >
-              <div
-                className="px-2.5 py-1 rounded-lg flex items-center justify-center transition-all duration-300 shadow-xs"
-                style={{
-                  backgroundColor: theme.secondarySwatchHex || '#ffdf1b',
-                }}
-              >
-                <span className="text-xl font-black italic tracking-wider text-black select-none leading-none">
-                  EPL 2026
-                </span>
-              </div>
+              <span className="text-2xl font-black italic tracking-wider text-white select-none transition-colors duration-300">
+                EPL 2026
+              </span>
             </div>
 
             {/* Zone 2: Navigation Links with active underlines */}
-            <nav className="overflow-x-auto no-scrollbar flex items-center gap-0.5 shrink py-1 px-2 h-full">
+            <nav className="overflow-x-auto no-scrollbar flex items-center gap-1 shrink py-1 px-1 h-full">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive =
@@ -94,7 +87,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
-                    className="h-11 px-3 rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 relative"
+                    className="px-2.5 py-1.5 rounded-md text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 hover:bg-black/10"
                     style={
                       isActive
                         ? {
@@ -117,12 +110,6 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
                     {item.isHot && (
                       <span 
                         className="w-1.5 h-1.5 rounded-full animate-pulse"
-                        style={{ backgroundColor: theme.secondarySwatchHex || '#ffdf1b' }}
-                      />
-                    )}
-                    {isActive && (
-                      <span 
-                        className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full"
                         style={{ backgroundColor: theme.secondarySwatchHex || '#ffdf1b' }}
                       />
                     )}

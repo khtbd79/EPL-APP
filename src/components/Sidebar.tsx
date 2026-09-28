@@ -83,16 +83,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleNavClick('dashboard')}
             className="inline-flex items-center cursor-pointer py-1 group"
           >
-            <div
-              className="px-2.5 py-1 rounded-lg flex items-center justify-center transition-all duration-300 shadow-xs"
-              style={{
-                backgroundColor: theme.secondarySwatchHex || '#ffdf1b',
-              }}
-            >
-              <span className="text-xl font-black italic tracking-wider text-black select-none leading-none">
-                EPL 2026
-              </span>
-            </div>
+            <span className="text-2xl font-black italic tracking-wider text-black select-none transition-colors duration-300">
+              EPL 2026
+            </span>
           </div>
         </div>
 
