@@ -61,15 +61,20 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
             {/* Zone 1: EPL 2026 Logo */}
             <div
               onClick={() => setActiveTab('dashboard')}
-              className="flex items-center justify-center cursor-pointer select-none group py-1"
+              className="inline-flex flex-col items-stretch justify-center cursor-pointer select-none group py-0.5 leading-none shrink-0"
               title="EPL 2026 Sports Home"
             >
               <span 
-                className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300"
+                className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
                 style={{ color: theme.secondarySwatchHex || '#ffffff' }}
               >
                 EPL 2026
               </span>
+              <div className="w-full flex justify-between items-center text-[9px] font-black uppercase text-white select-none leading-none mt-1 opacity-95 tracking-normal">
+                <span>P</span><span>R</span><span>E</span><span>M</span><span>I</span><span>E</span><span>R</span>
+                <span className="w-1" />
+                <span>L</span><span>E</span><span>A</span><span>G</span><span>U</span><span>E</span>
+              </div>
             </div>
 
             {/* Zone 2: Navigation Links with active underlines */}
@@ -132,16 +137,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
           borderBottomColor: theme.borderHex,
         }}
       >
-        <div className="w-full max-w-[1850px] mx-auto flex items-center justify-between text-[11px] text-slate-200 font-bold">
-          <div className="flex items-center gap-3">
-            <span 
-              className="font-black uppercase tracking-wider"
-              style={{ color: theme.secondarySwatchHex || '#ffdf1b' }}
-            >
-              Premier League
-            </span>
-          </div>
-
+        <div className="w-full max-w-[1850px] mx-auto flex items-center justify-end text-[11px] text-slate-200 font-bold">
           <div className="flex items-center gap-2 font-mono text-[10px] text-slate-300">
             <span>ODDS: DECIMAL</span>
             <span 

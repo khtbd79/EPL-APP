@@ -88,14 +88,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <div
             onClick={() => handleNavClick('dashboard')}
-            className="inline-flex items-center cursor-pointer py-1 group"
+            className="inline-flex flex-col items-stretch cursor-pointer py-1 group leading-none"
           >
             <span 
-              className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300"
+              className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
               style={{ color: theme.secondarySwatchHex || '#ffffff' }}
             >
               EPL 2026
             </span>
+            <div 
+              className="w-full flex justify-between items-center text-[9px] font-black uppercase select-none leading-none mt-1 opacity-95 tracking-normal"
+              style={{ color: theme.isDark ? '#f8fafc' : '#1e293b' }}
+            >
+              <span>P</span><span>R</span><span>E</span><span>M</span><span>I</span><span>E</span><span>R</span>
+              <span className="w-1" />
+              <span>L</span><span>E</span><span>A</span><span>G</span><span>U</span><span>E</span>
+            </div>
           </div>
         </div>
 

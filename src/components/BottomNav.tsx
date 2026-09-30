@@ -76,13 +76,18 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
               className="flex items-center justify-between border-b pb-3"
               style={{ borderBottomColor: theme.borderHex }}
             >
-              <div className="flex items-center space-x-2">
+              <div className="inline-flex flex-col items-stretch">
                 <span 
-                  className="text-lg font-black italic tracking-tighter"
+                  className="text-lg font-black italic tracking-tighter leading-none whitespace-nowrap"
                   style={{ color: activeColor }}
                 >
                   EPL 2026
                 </span>
+                <div className="w-full flex justify-between items-center text-[7.5px] font-black uppercase text-slate-200 select-none leading-none mt-1 opacity-95 tracking-normal">
+                  <span>P</span><span>R</span><span>E</span><span>M</span><span>I</span><span>E</span><span>R</span>
+                  <span className="w-1" />
+                  <span>L</span><span>E</span><span>A</span><span>G</span><span>U</span><span>E</span>
+                </div>
               </div>
               <button
                 onClick={() => setIsMoreMenuOpen(false)}
