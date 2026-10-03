@@ -65,7 +65,7 @@ export const DesktopHeader: React.FC<DesktopHeaderProps> = ({
               title="EPL 2026 Sports Home"
             >
               <span 
-                className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
+                className="text-2xl font-black tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
                 style={{ color: theme.secondarySwatchHex || '#ffffff' }}
               >
                 EPL 2026

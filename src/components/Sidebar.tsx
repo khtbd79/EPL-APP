@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="inline-flex flex-col items-stretch cursor-pointer py-1 group leading-none"
           >
             <span 
-              className="text-2xl font-black italic tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
+              className="text-2xl font-black tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
               style={{ color: theme.secondarySwatchHex || '#ffffff' }}
             >
               EPL 2026

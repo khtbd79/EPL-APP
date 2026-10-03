@@ -48,7 +48,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
             title="EPL 2026"
           >
             <span 
-              className="text-xl font-black italic tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
+              className="text-xl font-black tracking-wider select-none transition-colors duration-300 leading-none whitespace-nowrap"
               style={{ color: theme.secondarySwatchHex || '#ffffff' }}
             >
               EPL 2026

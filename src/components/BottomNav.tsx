@@ -78,7 +78,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, s
             >
               <div className="inline-flex flex-col items-stretch">
                 <span 
-                  className="text-lg font-black italic tracking-tighter leading-none whitespace-nowrap"
+                  className="text-lg font-black tracking-tighter leading-none whitespace-nowrap"
                   style={{ color: activeColor }}
                 >
                   EPL 2026
