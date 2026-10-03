@@ -939,15 +939,14 @@ EPL - PRO MATCH CENTER (WebIntoApp 100% OFFLINE APK GUIDE)
 3. 100% Embedded Fonts: Inter & JetBrains Mono are inlined as base64 WOFF2.
 4. Android WebView Safety: Resilient LocalStorage & IndexedDB fallbacks included.
 
-Quick APK Creation Guide (WebIntoApp):
+Quick APK Creation Guide:
 ------------------------------------------------------------------------
-1. Go to https://www.webintoapp.com
-2. Click "Make App".
-3. Choose "Upload HTML / ZIP File".
-4. Upload this downloaded ZIP file.
-5. App Name: EPL Match Center
-6. Settings: Set "Internet Connection Check" to Disabled.
-7. Click "Create App".
+1. Use any standard HTML-to-APK or WebView wrapper compiler (e.g. Website 2 APK, Cordova, or WebIntoApp).
+2. Choose "Upload HTML / ZIP File".
+3. Upload this downloaded offline ZIP file.
+4. App Name: EPL Match Center
+5. Settings: Set "Internet Connection Check" to Disabled (100% Offline).
+6. Click "Create App".
 ========================================================================`;
     zip.file('README_WebIntoApp_Guide.txt', readmeText);
 
@@ -980,11 +979,6 @@ Quick APK Creation Guide (WebIntoApp):
  */
 export async function downloadWindowsBatLauncher(currentState?: AppState): Promise<void> {
   let embeddedBase64 = '';
-  let onlineUrl = '';
-
-  if (typeof window !== 'undefined' && window.location) {
-    onlineUrl = window.location.href;
-  }
 
   if (currentState) {
     try {
@@ -1098,25 +1092,9 @@ if defined APP_FILE (
 )
 
 :: If standalone HTML was not placed in this folder and could not be extracted
-echo  [NOTE] Launching web application window...
+echo  [NOTE] Searching for local index.html or standalone application...
 echo.
-${onlineUrl ? `
-if exist "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe" (
-    start "" "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe" --app="${onlineUrl}" --window-size=1540,920
-    exit /b 0
-)
-if exist "%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe" (
-    start "" "%ProgramFiles%\\Microsoft\\Edge\\Application\\msedge.exe" --app="${onlineUrl}" --window-size=1540,920
-    exit /b 0
-)
-if exist "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" (
-    start "" "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" --app="${onlineUrl}" --window-size=1540,920
-    exit /b 0
-)
-start "" "${onlineUrl}"
-` : `
 start "" "%~dp0index.html"
-`}
 exit /b 0
 ${certBlock}`;
 

@@ -9,7 +9,6 @@ import {
   Shield,
   Activity,
   X,
-  ExternalLink,
   Database
 } from 'lucide-react';
 
